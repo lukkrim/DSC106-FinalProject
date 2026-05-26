@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f3e4d4">
+  <title>Write-up | What Does a Genre Sound Like?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="writeup-header">
+    <nav class="writeup-nav" aria-label="Site navigation">
+      <a href="../index.html">Back to main visualization</a>
+    </nav>
+    <p class="label">Project write-up</p>
+    <h1>What Does a Genre Sound Like?</h1>
+    <p>
+      Project process, design rationale, and reflections.
+    </p>
+  </header>
+
+  <main class="writeup-main">
+    <section class="writeup-card">
+      <h2>Write-up</h2>
+      <div class="writeup-section">
+        <p class="writeup-section-title">What we have done so far:</p>
+        <ul>
+          <li>
+            We clean the dataset by removing duplicate tracks and tracks with missing data.
+            We noticed many tracks appear in the same album with different album ids due to different versions,
+            so we decided to keep the track with the highest popularity so that the average popularity score
+            won't be shifted by versions that no one listens to.
+          </li>
+
+          <li>
+            We implemented the guessing game to grab audience's attention. The guessing panel uses spotify iframe
+            and random selected track id to display the track preview. The iframe is intially coverd by a mask so that
+            adueicen can't see any track information until selected a genre.
+          </li>
+
+          <li>
+            We created a d3 visuliazation on the characterisitcs of all six genres. Audience can explore the
+            differences in genres in terms of audio features such as danceability, energy, and tempo.
+          </li>
+
+          <li>
+            We also began the section on exploring what makes a track popular. The visulization tries to answer
+            three questions: whether shorter songs are more popular, whether certain audio features are related to popularity,
+            and which artists are consistently popular. Notice that the dataset might not reflect the current trends sicne it
+            covers data from 1957 to 2020 so some results might be outdated/slightly biased.
+          </li>
+        </ul>
+      </div>
+
+      <div class="writeup-section">
+        <p class="writeup-section-title">Challenges we have faced:</p>
+        <ul>
+          <li>
+            Even though the spotify iframe api does not require api key, it is still qute diffucult to set the iframe up,
+            especially on the part where we need to hide the track information until a genre is selected. We need to create
+            an external play button to control the playback of the track, which needs to be passed into the iframe api as an iput.
+          </li>
+          <li>
+            It's also pretty challenging to make the genre fingerprint visulization interactive. We need to make sure the
+            visulization is responsive and easy to understand, and the user can easily switch between the different audio features
+            while having the selected genre visible on the right side.
+          </li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
