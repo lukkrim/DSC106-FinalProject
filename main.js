@@ -53,35 +53,77 @@ const EXPLORER_FEATURES = [
   { key: 'tempo', label: 'Tempo', format: (value) => `${Math.round(value)} BPM` },
 ];
 
+const POPULARITY_FEATURES = [
+  { key: 'duration_min', label: 'Duration', format: (value) => `${value.toFixed(1)} min` },
+  { key: 'danceability', label: 'Danceability' },
+  { key: 'energy', label: 'Energy' },
+  { key: 'valence', label: 'Mood' },
+  { key: 'acousticness', label: 'Acousticness' },
+  { key: 'speechiness', label: 'Speechiness' },
+  { key: 'loudness', label: 'Loudness', format: (value) => `${value.toFixed(1)} dB` },
+  { key: 'tempo', label: 'Tempo', format: (value) => `${Math.round(value)} BPM` },
+];
+
 let spotifyApiPromise = null;
 let spotifyController = null;
 let spotifyIsPaused = true;
 let spotifyIsReady = false;
 
+function parseNumber(value) {
+  return value === '' || value == null ? NaN : +value;
+}
+
 function parseRow(row) {
   return {
-    track_id: row.track_id,
-    track_name: row.track_name,
-    track_artist: row.track_artist,
-    track_popularity: +row.track_popularity,
+    track_id: row.track_id?.trim(),
+    track_name: row.track_name?.trim(),
+    track_artist: row.track_artist?.trim(),
+    track_popularity: parseNumber(row.track_popularity),
+    duration_ms: parseNumber(row.duration_ms),
     playlist_genre: row.playlist_genre,
-    danceability: +row.danceability,
-    energy: +row.energy,
-    valence: +row.valence,
-    acousticness: +row.acousticness,
-    speechiness: +row.speechiness,
-    instrumentalness: +row.instrumentalness,
-    liveness: +row.liveness,
-    tempo: +row.tempo,
+    danceability: parseNumber(row.danceability),
+    energy: parseNumber(row.energy),
+    valence: parseNumber(row.valence),
+    acousticness: parseNumber(row.acousticness),
+    speechiness: parseNumber(row.speechiness),
+    instrumentalness: parseNumber(row.instrumentalness),
+    liveness: parseNumber(row.liveness),
+    loudness: parseNumber(row.loudness),
+    tempo: parseNumber(row.tempo),
   };
 }
 
-function dedupeByTrackId(rows) {
-  const seen = new Map();
-  for (const row of rows) {
-    if (!seen.has(row.track_id)) seen.set(row.track_id, row);
+function hasRequiredTrackData(row) {
+  return Boolean(
+    row.track_name &&
+    row.track_artist &&
+    row.track_id &&
+    row.playlist_genre &&
+    Number.isFinite(row.track_popularity) &&
+    Number.isFinite(row.duration_ms) &&
+    Number.isFinite(row.danceability) &&
+    Number.isFinite(row.energy) &&
+    Number.isFinite(row.valence) &&
+    Number.isFinite(row.acousticness) &&
+    Number.isFinite(row.speechiness) &&
+    Number.isFinite(row.instrumentalness) &&
+    Number.isFinite(row.liveness) &&
+    Number.isFinite(row.loudness) &&
+    Number.isFinite(row.tempo),
+  );
+}
+
+function dedupeByTrackName(rows) {
+  const bestByName = new Map();
+  const sortedRows = [...rows].sort((a, b) =>
+    d3.ascending(a.track_name, b.track_name) ||
+    d3.descending(a.track_popularity, b.track_popularity),
+  );
+
+  for (const row of sortedRows) {
+    if (!bestByName.has(row.track_name)) bestByName.set(row.track_name, row);
   }
-  return [...seen.values()];
+  return [...bestByName.values()];
 }
 
 function pickRandomTracks(pool, n) {
@@ -672,6 +714,354 @@ function initRandomTrackPlayer(pool) {
   pickTrack();
 }
 
+function performanceValue(track, key) {
+  if (key === 'duration_min') return track.duration_ms / 60000;
+  return track[key];
+}
+
+function performanceFeature(key) {
+  return POPULARITY_FEATURES.find((feature) => feature.key === key);
+}
+
+function formatPerformanceValue(key, value) {
+  const feature = performanceFeature(key);
+  if (feature?.format) return feature.format(value);
+  return `${Math.round(value * 100)}%`;
+}
+
+function makeScatterSample(pool) {
+  return d3
+    .groups(pool, (track) => track.playlist_genre)
+    .flatMap(([, rows]) => d3.shuffle([...rows]).slice(0, 280));
+}
+
+function buildArtistStats(pool) {
+  return d3
+    .groups(pool, (track) => track.track_artist)
+    .map(([artist, rows]) => ({
+      artist,
+      count: rows.length,
+      avgPopularity: d3.mean(rows, (track) => track.track_popularity),
+      topTrack: [...rows].sort((a, b) => b.track_popularity - a.track_popularity)[0],
+    }))
+    .filter((artist) => artist.count >= 5 && Number.isFinite(artist.avgPopularity))
+    .sort((a, b) => d3.descending(a.avgPopularity, b.avgPopularity))
+    .slice(0, 12);
+}
+
+function setPerformanceNote(view, featureKey, data) {
+  const title = document.getElementById('performance-note-title');
+  const copy = document.getElementById('performance-note-copy');
+  const stats = document.getElementById('performance-note-stats');
+  if (!title || !copy || !stats) return;
+
+  stats.replaceChildren();
+
+  function addStat(item) {
+    const stat = document.createElement('div');
+    stat.innerHTML = `<span>${item.label}</span><strong>${item.value}</strong>`;
+    stats.append(stat);
+  }
+
+  if (view === 'duration') {
+    const avgDuration = d3.mean(data, (track) => performanceValue(track, 'duration_min'));
+    const avgPopularity = d3.mean(data, (track) => track.track_popularity);
+    title.textContent = 'Are shorter songs more popular?';
+    copy.textContent =
+      'Each point is a track. The x-axis shows song length, while the y-axis shows Spotify popularity. Look for clusters rather than one perfect trend.';
+    [
+      { label: 'Avg duration', value: `${avgDuration.toFixed(1)} min` },
+      { label: 'Avg popularity', value: Math.round(avgPopularity) },
+    ].forEach(addStat);
+    return;
+  }
+
+  if (view === 'audio') {
+    const feature = performanceFeature(featureKey);
+    const values = data.map((track) => performanceValue(track, featureKey));
+    title.textContent = `Does ${feature.label.toLowerCase()} relate to popularity?`;
+    copy.textContent =
+      'Switch traits to see whether popular songs cluster around higher or lower audio-feature values. Color keeps genre visible while the x-axis changes.';
+    [
+      { label: 'Selected trait', value: feature.label },
+      { label: 'Median value', value: formatPerformanceValue(featureKey, d3.median(values)) },
+    ].forEach(addStat);
+    return;
+  }
+
+  title.textContent = 'Which artists are consistently popular?';
+  copy.textContent =
+    'This view ranks artists with at least five tracks in the dataset by average popularity, so one hit song does not dominate the story.';
+  [
+    { label: 'Artists shown', value: data.length },
+    { label: 'Minimum tracks', value: '5' },
+  ].forEach(addStat);
+}
+
+function initPerformanceExplorer(pool) {
+  const svgEl = document.getElementById('performance-chart');
+  const steps = document.getElementById('performance-steps');
+  const featureTabs = document.getElementById('performance-feature-tabs');
+  const genreFilters = document.getElementById('performance-genre-filters');
+  const tooltip = document.getElementById('performance-tooltip');
+  if (!svgEl || !steps || !featureTabs || !genreFilters) return;
+
+  const scatterData = makeScatterSample(pool).filter((track) =>
+    Number.isFinite(track.track_popularity) &&
+    Number.isFinite(track.duration_ms),
+  );
+  const artistData = buildArtistStats(pool);
+  const state = {
+    view: 'duration',
+    feature: 'duration_min',
+    genres: new Set(GENRES.map((genre) => genre.id)),
+  };
+
+  POPULARITY_FEATURES.filter((feature) => feature.key !== 'duration_min').forEach((feature) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'performance-feature-tab';
+    btn.textContent = feature.label;
+    btn.setAttribute('role', 'tab');
+    btn.dataset.feature = feature.key;
+    btn.addEventListener('click', () => {
+      state.feature = feature.key;
+      render();
+    });
+    featureTabs.append(btn);
+  });
+
+  GENRES.forEach((genre) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'performance-genre-filter';
+    btn.textContent = genre.label;
+    btn.dataset.genre = genre.id;
+    btn.addEventListener('click', () => {
+      if (state.genres.has(genre.id) && state.genres.size > 1) {
+        state.genres.delete(genre.id);
+      } else {
+        state.genres.add(genre.id);
+      }
+      render();
+    });
+    genreFilters.append(btn);
+  });
+
+  steps.querySelectorAll('.performance-step').forEach((btn) => {
+    btn.setAttribute('role', 'tab');
+    btn.addEventListener('click', () => {
+      state.view = btn.dataset.view;
+      if (state.view === 'duration') state.feature = 'duration_min';
+      if (state.view === 'audio' && state.feature === 'duration_min') {
+        state.feature = 'danceability';
+      }
+      render();
+    });
+  });
+
+  const svg = d3.select(svgEl);
+  const margin = { top: 18, right: 24, bottom: 48, left: 54 };
+
+  function renderScatter() {
+    const bounds = svgEl.getBoundingClientRect();
+    const width = Math.max(340, Math.floor(bounds.width || 720));
+    const height = 390;
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+    const data = scatterData.filter((track) =>
+      state.genres.has(track.playlist_genre) &&
+      Number.isFinite(performanceValue(track, state.feature)) &&
+      Number.isFinite(track.track_popularity),
+    );
+    const xValues = data.map((track) => performanceValue(track, state.feature));
+    const sortedX = [...xValues].sort(d3.ascending);
+    const xDomain =
+      state.feature === 'duration_min'
+        ? [1, Math.min(8, d3.quantile(sortedX, 0.98) ?? 8)]
+        : state.feature === 'loudness' || state.feature === 'tempo'
+          ? d3.extent(xValues)
+          : [0, 1];
+
+    const x = d3.scaleLinear().domain(xDomain).nice().range([0, innerWidth]);
+    const y = d3.scaleLinear().domain([0, 100]).range([innerHeight, 0]);
+
+    svg.attr('viewBox', `0 0 ${width} ${height}`);
+    const root = svg.selectAll('g.performance-root').data([null]).join('g')
+      .attr('class', 'performance-root')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
+
+    root.selectAll('*').remove();
+
+    root.append('g')
+      .attr('class', 'performance-grid')
+      .call(d3.axisLeft(y).ticks(5).tickSize(-innerWidth).tickFormat(''));
+
+    root.append('g')
+      .attr('class', 'x-axis')
+      .attr('transform', `translate(0,${innerHeight})`)
+      .call(
+        d3.axisBottom(x).ticks(5).tickFormat((value) =>
+          state.feature === 'duration_min'
+            ? `${value}m`
+            : state.feature === 'tempo'
+              ? Math.round(value)
+              : state.feature === 'loudness'
+                ? value
+                : `${Math.round(value * 100)}%`,
+        ),
+      );
+
+    root.append('g').attr('class', 'y-axis').call(d3.axisLeft(y).ticks(5));
+
+    root.append('text')
+      .attr('class', 'axis-label')
+      .attr('x', innerWidth / 2)
+      .attr('y', innerHeight + 40)
+      .attr('text-anchor', 'middle')
+      .text(performanceFeature(state.feature).label);
+
+    root.append('text')
+      .attr('class', 'axis-label')
+      .attr('x', -innerHeight / 2)
+      .attr('y', -40)
+      .attr('text-anchor', 'middle')
+      .attr('transform', 'rotate(-90)')
+      .text('Popularity');
+
+    root.selectAll('circle')
+      .data(data, (track) => track.track_id)
+      .join('circle')
+      .attr('cx', (track) => x(performanceValue(track, state.feature)))
+      .attr('cy', (track) => y(track.track_popularity))
+      .attr('r', 4)
+      .attr('fill', (track) => GENRE_COLORS[track.playlist_genre])
+      .attr('opacity', 0.58)
+      .on('pointerenter', (event, track) => {
+        if (!tooltip) return;
+        tooltip.hidden = false;
+        tooltip.innerHTML = `
+          <strong>${track.track_name}</strong>
+          <span>${track.track_artist}</span>
+          <small>${genreLabel(track.playlist_genre)} · popularity ${track.track_popularity}</small>
+          <small>${performanceFeature(state.feature).label}: ${formatPerformanceValue(state.feature, performanceValue(track, state.feature))}</small>
+        `;
+      })
+      .on('pointermove', (event) => {
+        if (!tooltip) return;
+        const wrap = event.currentTarget.ownerSVGElement.getBoundingClientRect();
+        tooltip.style.left = `${event.clientX - wrap.left + 12}px`;
+        tooltip.style.top = `${event.clientY - wrap.top - 12}px`;
+      })
+      .on('pointerleave', () => {
+        if (tooltip) tooltip.hidden = true;
+      });
+
+    setPerformanceNote(state.view, state.feature, data);
+  }
+
+  function renderArtists() {
+    const bounds = svgEl.getBoundingClientRect();
+    const width = Math.max(340, Math.floor(bounds.width || 720));
+    const height = 420;
+    const artistMargin = { top: 16, right: 70, bottom: 28, left: 150 };
+    const innerWidth = width - artistMargin.left - artistMargin.right;
+    const innerHeight = height - artistMargin.top - artistMargin.bottom;
+    const x = d3.scaleLinear()
+      .domain([0, d3.max(artistData, (artist) => artist.avgPopularity) * 1.08])
+      .range([0, innerWidth]);
+    const y = d3.scaleBand()
+      .domain(artistData.map((artist) => artist.artist))
+      .range([0, innerHeight])
+      .padding(0.24);
+
+    svg.attr('viewBox', `0 0 ${width} ${height}`);
+    const root = svg.selectAll('g.performance-root').data([null]).join('g')
+      .attr('class', 'performance-root')
+      .attr('transform', `translate(${artistMargin.left},${artistMargin.top})`);
+
+    root.selectAll('*').remove();
+    root.append('g')
+      .attr('class', 'x-axis')
+      .attr('transform', `translate(0,${innerHeight})`)
+      .call(d3.axisBottom(x).ticks(5));
+    root.append('g').attr('class', 'y-axis').call(d3.axisLeft(y).tickSize(0));
+
+    const rows = root.selectAll('g.artist-row')
+      .data(artistData, (artist) => artist.artist)
+      .join('g')
+      .attr('class', 'artist-row')
+      .attr('transform', (artist) => `translate(0,${y(artist.artist)})`);
+
+    rows.append('rect')
+      .attr('height', y.bandwidth())
+      .attr('rx', 7)
+      .attr('width', (artist) => x(artist.avgPopularity))
+      .attr('fill', 'var(--accent)');
+
+    rows.append('text')
+      .attr('class', 'artist-value')
+      .attr('x', (artist) => x(artist.avgPopularity) + 8)
+      .attr('y', y.bandwidth() / 2)
+      .attr('dy', '0.35em')
+      .text((artist) => `${Math.round(artist.avgPopularity)} · ${artist.count} tracks`);
+
+    rows
+      .on('pointerenter', (event, artist) => {
+        if (!tooltip) return;
+        tooltip.hidden = false;
+        tooltip.innerHTML = `
+          <strong>${artist.artist}</strong>
+          <span>Avg popularity ${Math.round(artist.avgPopularity)}</span>
+          <small>${artist.count} tracks · top track: ${artist.topTrack.track_name}</small>
+        `;
+      })
+      .on('pointermove', (event) => {
+        if (!tooltip) return;
+        const wrap = event.currentTarget.ownerSVGElement.getBoundingClientRect();
+        tooltip.style.left = `${event.clientX - wrap.left + 12}px`;
+        tooltip.style.top = `${event.clientY - wrap.top - 12}px`;
+      })
+      .on('pointerleave', () => {
+        if (tooltip) tooltip.hidden = true;
+      });
+
+    setPerformanceNote('artists', state.feature, artistData);
+  }
+
+  function render() {
+    steps.querySelectorAll('.performance-step').forEach((btn) => {
+      const active = btn.dataset.view === state.view;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-selected', String(active));
+    });
+
+    featureTabs.hidden = state.view !== 'audio';
+    genreFilters.hidden = state.view === 'artists';
+
+    featureTabs.querySelectorAll('.performance-feature-tab').forEach((btn) => {
+      const active = btn.dataset.feature === state.feature;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-selected', String(active));
+    });
+
+    genreFilters.querySelectorAll('.performance-genre-filter').forEach((btn) => {
+      const genre = btn.dataset.genre;
+      btn.classList.toggle('is-active', state.genres.has(genre));
+      btn.style.setProperty('--filter-color', GENRE_COLORS[genre]);
+    });
+
+    if (tooltip) tooltip.hidden = true;
+    if (state.view === 'artists') renderArtists();
+    else renderScatter();
+  }
+
+  render();
+
+  const resizeObserver = new ResizeObserver(render);
+  resizeObserver.observe(svgEl);
+}
+
 function onGuess(tracks, state, guessedGenre) {
   const i = state.activeIndex;
   if (state.answers[i]) return;
@@ -716,9 +1106,9 @@ function wireSpotifyPlayButton() {
 
 async function init() {
   const raw = await d3.csv(DATA_URL, parseRow);
-  const pool = dedupeByTrackId(raw).filter((d) =>
-    GENRES.some((g) => g.id === d.playlist_genre),
-  );
+  const pool = dedupeByTrackName(raw)
+    .filter(hasRequiredTrackData)
+    .filter((d) => GENRES.some((g) => g.id === d.playlist_genre));
   const tracks = pickRandomTracks(pool, TRACK_COUNT);
 
   const state = {
@@ -730,6 +1120,7 @@ async function init() {
   wireSpotifyPlayButton();
   initGenreExplorer(pool);
   initRandomTrackPlayer(pool);
+  initPerformanceExplorer(pool);
 
   document.getElementById('btn-next-track').addEventListener('click', () => {
     onNextTrack(tracks, state);

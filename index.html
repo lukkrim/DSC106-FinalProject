@@ -11,8 +11,8 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet"
   >
-  <link rel="stylesheet" href="style.css?v=8">
-  <script src="main.js" type="module"></script>
+  <link rel="stylesheet" href="style.css?v=9">
+  <script src="main.js?v=2" type="module"></script>
 </head>
 <body>
   <header class="site-header">
@@ -173,6 +173,72 @@
           <p class="genre-profile__meta" id="genre-profile-meta"></p>
           <div class="genre-profile__bars" id="genre-profile-bars"></div>
           <p class="genre-profile__note" id="genre-profile-note"></p>
+        </aside>
+      </div>
+    </section>
+
+    <section
+      class="performance-explorer"
+      id="performance-explorer"
+      aria-labelledby="performance-explorer-title"
+    >
+      <div class="performance-explorer__header">
+        <p class="label">Popularity patterns</p>
+        <h2 id="performance-explorer-title">What makes a track perform?</h2>
+        <p>
+          Follow three views of the dataset to compare popularity with duration,
+          musical traits, and artist-level consistency.
+        </p>
+      </div>
+
+      <div
+        class="performance-steps"
+        id="performance-steps"
+        role="tablist"
+        aria-label="Popularity question"
+      >
+        <button type="button" class="performance-step" data-view="duration">
+          Duration
+        </button>
+        <button type="button" class="performance-step" data-view="audio">
+          Audio traits
+        </button>
+        <button type="button" class="performance-step" data-view="artists">
+          Artists
+        </button>
+      </div>
+
+      <div class="performance-explorer__layout">
+        <div class="performance-chart-panel">
+          <div class="performance-controls">
+            <div
+              class="performance-feature-tabs"
+              id="performance-feature-tabs"
+              role="tablist"
+              aria-label="Popularity feature"
+            ></div>
+            <div
+              class="performance-genre-filters"
+              id="performance-genre-filters"
+              aria-label="Genre filters"
+            ></div>
+          </div>
+          <div class="performance-chart-wrap">
+            <svg
+              class="performance-chart"
+              id="performance-chart"
+              role="img"
+              aria-label="Interactive popularity visualization"
+            ></svg>
+            <div class="performance-tooltip" id="performance-tooltip" hidden></div>
+          </div>
+        </div>
+
+        <aside class="performance-note" id="performance-note">
+          <p class="label">Guided question</p>
+          <h3 id="performance-note-title"></h3>
+          <p id="performance-note-copy"></p>
+          <div class="performance-note__stats" id="performance-note-stats"></div>
         </aside>
       </div>
     </section>

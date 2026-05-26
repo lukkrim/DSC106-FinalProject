@@ -890,3 +890,235 @@ main {
     width: 100%;
   }
 }
+
+/* --- Popularity explorer --- */
+
+.performance-explorer {
+  margin-top: 2rem;
+  padding: 1.25rem 1.5rem;
+  background: rgba(255, 250, 246, 0.82);
+  border: 1px solid var(--ring);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(58, 47, 40, 0.06);
+}
+
+.performance-explorer__header {
+  max-width: 52rem;
+  margin-bottom: 1rem;
+}
+
+.performance-explorer h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+}
+
+.performance-explorer__header p:last-child,
+.performance-note p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.performance-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.performance-step,
+.performance-feature-tab,
+.performance-genre-filter {
+  padding: 0.45rem 0.75rem;
+  color: var(--text);
+  background: rgba(255, 250, 246, 0.78);
+  border: 1px solid var(--ring);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 700;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.performance-step:hover,
+.performance-step.is-active,
+.performance-feature-tab:hover,
+.performance-feature-tab.is-active {
+  color: #fffaf6;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.performance-genre-filter {
+  border-color: var(--filter-color, var(--ring));
+}
+
+.performance-genre-filter.is-active {
+  color: #fffaf6;
+  background: var(--filter-color, var(--accent));
+  border-color: var(--filter-color, var(--accent));
+}
+
+.performance-explorer__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(17rem, 0.6fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.performance-chart-panel,
+.performance-note {
+  min-width: 0;
+  padding: 1rem;
+  background: rgba(243, 228, 212, 0.35);
+  border: 1px solid var(--ring);
+  border-radius: 8px;
+}
+
+.performance-controls {
+  display: grid;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.performance-feature-tabs,
+.performance-genre-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.performance-feature-tabs[hidden],
+.performance-genre-filters[hidden] {
+  display: none;
+}
+
+.performance-chart-wrap {
+  position: relative;
+  min-height: 390px;
+}
+
+.performance-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.performance-chart .x-axis path,
+.performance-chart .y-axis path {
+  display: none;
+}
+
+.performance-chart .x-axis line,
+.performance-chart .y-axis line,
+.performance-grid line {
+  stroke: rgba(139, 117, 104, 0.2);
+}
+
+.performance-grid path {
+  display: none;
+}
+
+.performance-chart .x-axis text,
+.performance-chart .y-axis text,
+.axis-label {
+  fill: var(--muted);
+  font-size: 0.76rem;
+}
+
+.performance-chart .y-axis text {
+  fill: var(--text);
+  font-weight: 700;
+}
+
+.performance-chart circle {
+  stroke: rgba(255, 250, 246, 0.7);
+  stroke-width: 1;
+}
+
+.artist-row rect {
+  opacity: 0.78;
+}
+
+.artist-row:hover rect {
+  opacity: 1;
+  filter: drop-shadow(0 4px 7px rgba(58, 47, 40, 0.16));
+}
+
+.artist-value {
+  fill: var(--text);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.performance-tooltip {
+  position: absolute;
+  z-index: 4;
+  max-width: 15rem;
+  padding: 0.55rem 0.65rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--ring);
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(58, 47, 40, 0.14);
+  pointer-events: none;
+}
+
+.performance-tooltip strong,
+.performance-tooltip span,
+.performance-tooltip small {
+  display: block;
+}
+
+.performance-tooltip span {
+  margin-top: 0.1rem;
+  font-weight: 700;
+}
+
+.performance-tooltip small {
+  margin-top: 0.12rem;
+  color: var(--muted);
+}
+
+.performance-note h3 {
+  margin: 0.1rem 0 0.45rem;
+  font-size: 1.2rem;
+}
+
+.performance-note__stats {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.performance-note__stats div {
+  padding: 0.75rem;
+  background: rgba(255, 250, 246, 0.58);
+  border: 1px solid var(--ring);
+  border-radius: 8px;
+}
+
+.performance-note__stats span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.performance-note__stats strong {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 1.12rem;
+}
+
+@media (max-width: 860px) {
+  .performance-explorer__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .performance-explorer {
+    padding: 1rem;
+  }
+}
