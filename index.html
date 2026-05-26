@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f3e4d4">
+  <title>What Does a Genre Sound Like?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+  <link rel="stylesheet" href="style.css?v=8">
+  <script src="main.js" type="module"></script>
+</head>
+<body>
+  <header class="site-header">
+    <h1>What Does a Genre Sound Like?</h1>
+    <p class="lede">
+      This is a project that explores the sound of different genres of music.
+    </p>
+  </header>
+
+  <main>
+    <section id="genre-guess" class="genre-guess" aria-labelledby="genre-guess-title">
+      <h2 id="genre-guess-title">Guess the genre</h2>
+      <p class="section-note">
+        Listen to each preview, then guess the genre.
+      </p>
+
+      <div class="genre-guess__layout">
+        <!-- Left: feature fingerprint -->
+        <section
+          class="feature-card"
+          id="feature-fingerprint"
+          aria-labelledby="feature-fingerprint-title"
+        >
+          <div class="feature-card__header">
+            <p class="label">Sonic fingerprint</p>
+            <h3 id="feature-fingerprint-title">Mystery profile</h3>
+            <p class="feature-card__status" id="feature-card-status"></p>
+          </div>
+          <div class="feature-bars" id="feature-bars"></div>
+          <p class="feature-summary" id="feature-summary"></p>
+        </section>
+
+        <!-- Right: now playing + guess + reveal -->
+        <div class="guess-panel">
+          <div class="guess-panel__now-playing">
+            <p class="label">Now playing</p>
+            <h3 id="now-playing-title">Song 1</h3>
+            <div class="spotify-embed-wrap" id="spotify-embed-wrap">
+              <p class="label">Listen</p>
+              <div class="spotify-embed" id="spotify-embed" aria-label="Spotify track preview"></div>
+              <button
+                type="button"
+                class="spotify-play-btn"
+                id="spotify-play-btn"
+                aria-label="Play preview"
+                disabled
+              >
+                <span class="spotify-play-btn__icon" aria-hidden="true"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="guess-panel__controls" id="guess-controls">
+            <p class="label">Guess the genre</p>
+            <div class="genre-buttons" id="genre-buttons" role="group" aria-label="Genre choices">
+              <button type="button" class="genre-btn" data-genre="edm">EDM</button>
+              <button type="button" class="genre-btn" data-genre="rap">Rap</button>
+              <button type="button" class="genre-btn" data-genre="r&b">R&amp;B</button>
+              <button type="button" class="genre-btn" data-genre="latin">Latin</button>
+              <button type="button" class="genre-btn" data-genre="pop">Pop</button>
+              <button type="button" class="genre-btn" data-genre="rock">Rock</button>
+            </div>
+          </div>
+
+          <div class="guess-panel__reveal" id="guess-reveal" hidden>
+            <p class="reveal-result" id="reveal-result"></p>
+            <dl class="reveal-details">
+              <div>
+                <dt>Track</dt>
+                <dd id="reveal-track-name"></dd>
+              </div>
+              <div>
+                <dt>Artist</dt>
+                <dd id="reveal-artist"></dd>
+              </div>
+              <div>
+                <dt>Genre</dt>
+                <dd id="reveal-genre"></dd>
+              </div>
+            </dl>
+            <p class="reveal-explanation" id="reveal-explanation"></p>
+            <button type="button" class="btn-next" id="btn-next-track" hidden>
+              Next song
+            </button>
+          </div>
+
+          <p class="progress-text" id="progress-text">Track 1 of 5</p>
+        </div>
+      </div>
+    </section>
+
+    <section
+      class="game-summary"
+      id="game-summary"
+      aria-labelledby="game-summary-title"
+      hidden
+    >
+      <p class="label">Game summary</p>
+      <h2 id="game-summary-title">Your genre scorecard</h2>
+      <p class="game-summary__lede" id="game-summary-lede"></p>
+      <div class="game-summary__stats" id="game-summary-stats"></div>
+      <div class="game-summary__list" id="game-summary-list"></div>
+    </section>
+
+    <section
+      class="genre-explorer"
+      id="genre-explorer"
+      aria-labelledby="genre-explorer-title"
+    >
+      <div class="genre-explorer__header">
+        <p class="label">Explore the dataset</p>
+        <h2 id="genre-explorer-title">Genre fingerprints</h2>
+        <p>
+          Compare the average audio characteristics of all six playlist genres.
+        </p>
+      </div>
+
+      <div class="genre-explorer__layout">
+        <div class="genre-explorer__chart-panel">
+          <div
+            class="explorer-tabs"
+            id="explorer-feature-tabs"
+            role="tablist"
+            aria-label="Audio feature"
+          ></div>
+          <div class="explorer-chart-wrap">
+            <svg
+              class="explorer-chart"
+              id="explorer-chart"
+              role="img"
+              aria-label="Ranked bar chart comparing genres by selected audio feature"
+            ></svg>
+            <div class="explorer-tooltip" id="explorer-tooltip" hidden></div>
+          </div>
+          <p class="explorer-help">
+            Use the feature tabs to re-rank genres by average audio traits. Hover a bar
+            for the exact value, or click a genre to update the profile card.
+          </p>
+          <div class="explorer-random-player">
+            <div>
+              <p class="label">Random dataset track</p>
+              <p class="explorer-random-player__title" id="random-track-title"></p>
+            </div>
+            <button type="button" class="btn-shuffle" id="btn-random-track">
+              Shuffle song
+            </button>
+            <div
+              class="explorer-random-player__embed"
+              id="random-track-embed"
+              aria-label="Random Spotify track from the dataset"
+            ></div>
+          </div>
+        </div>
+
+        <aside class="genre-profile" id="genre-profile">
+          <p class="label">Selected genre</p>
+          <h3 id="genre-profile-title"></h3>
+          <p class="genre-profile__meta" id="genre-profile-meta"></p>
+          <div class="genre-profile__bars" id="genre-profile-bars"></div>
+          <p class="genre-profile__note" id="genre-profile-note"></p>
+        </aside>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
