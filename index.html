@@ -11,8 +11,8 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet"
   >
-  <link rel="stylesheet" href="style.css?v=9">
-  <script src="main.js?v=2" type="module"></script>
+  <link rel="stylesheet" href="style.css?v=10">
+  <script src="main.js?v=3" type="module"></script>
 </head>
 <body>
   <header class="site-header">
@@ -245,6 +245,49 @@
           <p id="performance-note-copy"></p>
           <div class="performance-note__stats" id="performance-note-stats"></div>
         </aside>
+      </div>
+    </section>
+    <section
+      class="artist-journey"
+      id="artist-journey"
+      aria-labelledby="artist-journey-title"
+    >
+      <div class="artist-journey__header">
+        <p class="label">Artist journeys</p>
+        <h2 id="artist-journey-title">How do artists evolve over time?</h2>
+        <p>
+          Pick an artist and step through their career year by year — then
+          zoom out to see how the whole genre landscape shifted.
+        </p>
+      </div>
+
+      <!-- Beat 1: pick an artist -->
+      <div class="journey-pick-panel" id="journey-pick-panel">
+        <p class="journey-pick-prompt">Choose an artist to follow</p>
+        <div class="artist-picker" id="artist-picker" role="group" aria-label="Select artist"></div>
+        <button type="button" class="btn-journey-start" id="btn-journey-start">
+          Start their story →
+        </button>
+      </div>
+
+      <!-- Beats 2–5: story -->
+      <div class="journey-story" id="journey-story" hidden>
+        <div class="journey-progress" id="journey-progress" aria-label="Story progress"></div>
+        <div class="artist-journey__layout">
+          <div class="artist-journey__chart-panel">
+            <div class="journey-chart-wrap">
+              <svg
+                class="journey-chart"
+                id="journey-chart"
+                role="img"
+                aria-label="Artist journey chart"
+              ></svg>
+              <div class="journey-tooltip" id="journey-tooltip" hidden></div>
+            </div>
+            <div class="journey-legend" id="journey-legend"></div>
+          </div>
+          <aside class="journey-narrative" id="journey-narrative"></aside>
+        </div>
       </div>
     </section>
   </main>
