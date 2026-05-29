@@ -1112,6 +1112,12 @@ function buildGenreJourneyData(pool) {
       .map(([year, rows]) => ({
         year,
         avgPopularity: d3.mean(rows, (t) => t.track_popularity),
+        featureAvgs: {
+          danceability: d3.mean(rows, (t) => t.danceability),
+          energy: d3.mean(rows, (t) => t.energy),
+          valence: d3.mean(rows, (t) => t.valence),
+          acousticness: d3.mean(rows, (t) => t.acousticness),
+        },
         count: rows.length,
       }))
       .filter((d) => Number.isFinite(d.avgPopularity) && d.year >= 1990 && d.year <= 2020)
@@ -1388,6 +1394,79 @@ function drawGenreChart(svgEl, genreData, tooltipEl) {
   });
 }
 
+function drawFeatureTakeawayChart(svgEl, data, state, genreData, tooltipEl) {
+  if (!data.length || !state.soundFeature) {
+    drawGenreChart(svgEl, genreData, tooltipEl);
+    return;
+  }
+  const featKey = state.soundFeature.key;
+  const artistFeatData = data.filter((d) => Number.isFinite(d.featureAvgs[featKey]));
+  if (artistFeatData.length < 2) {
+    drawGenreChart(svgEl, genreData, tooltipEl);
+    return;
+  }
+
+  const { iW, iH, root } = journeyChartSetup(svgEl);
+  root.selectAll('*').remove();
+
+  const color = GENRE_COLORS[state.genre] ?? '#c67b5c';
+  const genreFeatData = (genreData[state.genre] ?? []).filter(
+    (d) => Number.isFinite(d.featureAvgs?.[featKey]),
+  );
+
+  const allYears = [
+    ...artistFeatData.map((d) => d.year),
+    ...genreFeatData.map((d) => d.year),
+  ];
+  const x = d3.scaleLinear().domain(d3.extent(allYears)).range([0, iW]);
+  const y = d3.scaleLinear().domain([0, 100]).range([iH, 0]);
+
+  root.selectAll('.journey-grid').data([null]).join('g').attr('class', 'journey-grid')
+    .call(d3.axisLeft(y).ticks(5).tickSize(-iW).tickFormat(''));
+  root.selectAll('.x-axis').data([null]).join('g').attr('class', 'x-axis')
+    .attr('transform', `translate(0,${iH})`)
+    .call(d3.axisBottom(x).ticks(Math.min(artistFeatData.length, 8)).tickFormat(d3.format('d')).tickSizeOuter(0));
+  root.selectAll('.y-axis').data([null]).join('g').attr('class', 'y-axis')
+    .call(d3.axisLeft(y).ticks(5).tickSizeOuter(0));
+  root.selectAll('.axis-label').data([null]).join('text').attr('class', 'axis-label')
+    .attr('x', -iH / 2).attr('y', -42).attr('text-anchor', 'middle')
+    .attr('transform', 'rotate(-90)').text(`${state.soundFeature.label} (0–100)`);
+
+  if (genreFeatData.length > 1) {
+    const genreLine = d3.line()
+      .defined((d) => Number.isFinite(d.featureAvgs[featKey]))
+      .x((d) => x(d.year)).y((d) => y(clamp01(d.featureAvgs[featKey]) * 100))
+      .curve(d3.curveMonotoneX);
+    root.append('path').datum(genreFeatData)
+      .attr('fill', 'none').attr('stroke', '#8b7568').attr('stroke-width', 1.5)
+      .attr('stroke-dasharray', '5 3').attr('opacity', 0)
+      .attr('d', genreLine)
+      .transition().duration(500).attr('opacity', 0.6);
+  }
+
+  const artistLine = d3.line()
+    .defined((d) => Number.isFinite(d.featureAvgs[featKey]))
+    .x((d) => x(d.year)).y((d) => y(clamp01(d.featureAvgs[featKey]) * 100))
+    .curve(d3.curveMonotoneX);
+  root.append('path').datum(artistFeatData)
+    .attr('fill', 'none').attr('stroke', color).attr('stroke-width', 2.5)
+    .attr('opacity', 0).attr('d', artistLine)
+    .transition().duration(500).attr('opacity', 1);
+
+  const dots = root.selectAll('circle.journey-pop-dot')
+    .data(artistFeatData)
+    .join('circle').attr('class', 'journey-pop-dot')
+    .attr('cx', (d) => x(d.year)).attr('cy', (d) => y(clamp01(d.featureAvgs[featKey]) * 100))
+    .attr('r', 5.5).attr('fill', color)
+    .attr('stroke', '#fffaf6').attr('stroke-width', 2).style('cursor', 'pointer');
+
+  attachDotTooltip(dots, tooltipEl, (d) => `
+    <strong>${d.year}</strong>
+    <span>${state.soundFeature.label}: ${Math.round(clamp01(d.featureAvgs[featKey]) * 100)}</span>
+    <small>Top: "${d.topTrack?.track_name ?? '—'}"</small>
+  `);
+}
+
 function renderJourneyProgress(el, beat) {
   const steps = [
     { id: 'reveal', label: 'Journey' },
@@ -1448,21 +1527,25 @@ function renderJourneyLegend(legendEl, beat, state) {
       legendEl.append(item);
     });
   } else if (beat === 'genre') {
-    GENRES.forEach(({ id, label }) => {
-      const color = GENRE_COLORS[id] ?? '#c67b5c';
-      const item = document.createElement('span');
-      item.className = 'journey-legend__item';
-      item.style.setProperty('--legend-color', color);
-      item.innerHTML = `<i></i> ${label}`;
-      legendEl.append(item);
-    });
+    const artistColor = GENRE_COLORS[state.genre] ?? '#c67b5c';
+    const artistItem = document.createElement('span');
+    artistItem.className = 'journey-legend__item';
+    artistItem.style.setProperty('--legend-color', artistColor);
+    artistItem.innerHTML = `<i></i> ${state.artist}`;
+    legendEl.append(artistItem);
+    const genreItem = document.createElement('span');
+    genreItem.className = 'journey-legend__item is-dashed';
+    genreItem.style.setProperty('--legend-color', '#8b7568');
+    const genreLabel = state.genre ? state.genre.charAt(0).toUpperCase() + state.genre.slice(1) : 'Genre';
+    genreItem.innerHTML = `<i></i> ${genreLabel} avg`;
+    legendEl.append(genreItem);
   }
 }
 
 function renderNarrativePanel(el, state, data, onAdvance) {
   el.replaceChildren();
   el.style.setProperty('--narrative-color', GENRE_COLORS[state.genre] ?? 'var(--accent)');
-  const { beat, yearIndex, artist, soundFeature } = state;
+  const { beat, yearIndex, artist, soundFeature, genre } = state;
 
   if (beat === 'reveal') {
     const curr = data[yearIndex];
@@ -1525,11 +1608,32 @@ function renderNarrativePanel(el, state, data, onAdvance) {
       </div>
     `;
   } else if (beat === 'genre') {
+    const name = artist.split(' ')[0];
+    const genreLabel = genre ? genre.charAt(0).toUpperCase() + genre.slice(1) : 'their genre';
+    let title, body, meta;
+    if (soundFeature) {
+      const featLabel = soundFeature.label.toLowerCase();
+      let trending;
+      if (soundFeature.r > 0.3) {
+        trending = `${name}'s ${featLabel} rose alongside their popularity`;
+      } else if (soundFeature.r < -0.3) {
+        trending = `${name}'s ${featLabel} fell as their popularity grew`;
+      } else {
+        trending = `${name}'s ${featLabel} held relatively steady`;
+      }
+      title = `${name} vs. ${genreLabel}`;
+      body = `${trending} — but were they following the ${genreLabel} trend or bucking it? The solid line is ${name}; the dashed line is the ${genreLabel} genre average. See if they led the trend, tracked it, or went their own way.`;
+      meta = `Feature values run 0–100. Dashed line: ${genreLabel} genre average for ${featLabel}. Dataset collected ~2020.`;
+    } else {
+      title = 'The genre picture';
+      body = `Each line is the year-by-year average popularity across every track in that genre (1990–2020). Genres that thrived in the streaming era show a rising arc into the 2010s.`;
+      meta = 'The dataset was collected ~2020. Popularity reflects current Spotify streams, not the year a track was released.';
+    }
     el.innerHTML = `
       <p class="label">The takeaway</p>
-      <h3>The genre picture</h3>
-      <p>Each line is the year-by-year average popularity across every track in that genre (1990–2020). Genres that thrived in the streaming era show a rising arc into the 2010s — genres that peaked before Spotify tend to plateau or decline.</p>
-      <p class="narrative-meta">The dataset was collected ~2020. Popularity reflects current Spotify streams, not the year a track was released.</p>
+      <h3>${title}</h3>
+      <p>${body}</p>
+      <p class="narrative-meta">${meta}</p>
       <div class="narrative-footer">
         <button type="button" class="btn-journey-next" id="btn-journey-next">Try another artist →</button>
       </div>
@@ -1586,6 +1690,7 @@ function initArtistJourney(pool) {
     state.beat = 'reveal';
     state.yearIndex = 0;
     state.soundFeature = null;
+    pickerEl.querySelectorAll('.artist-pick-btn').forEach((b) => { b.disabled = true; });
     d3.select(svgEl).selectAll('g.journey-root').selectAll('*').remove();
     pickPanel.hidden = true;
     storyPanel.hidden = false;
@@ -1609,6 +1714,7 @@ function initArtistJourney(pool) {
       state.beat = 'pick';
       state.yearIndex = 0;
       state.soundFeature = null;
+      pickerEl.querySelectorAll('.artist-pick-btn').forEach((b) => { b.disabled = false; });
       pickPanel.hidden = false;
       storyPanel.hidden = true;
       return;
@@ -1626,7 +1732,7 @@ function initArtistJourney(pool) {
     if (state.beat === 'reveal') drawRevealChart(svgEl, data, state, tooltipEl);
     else if (state.beat === 'sound') drawSoundChart(svgEl, data, state, tooltipEl);
     else if (state.beat === 'compare') drawCompareChart(svgEl, state, artistDataMap, tooltipEl);
-    else if (state.beat === 'genre') drawGenreChart(svgEl, genreData, tooltipEl);
+    else if (state.beat === 'genre') drawFeatureTakeawayChart(svgEl, data, state, genreData, tooltipEl);
 
     if (legendEl) renderJourneyLegend(legendEl, state.beat, state);
     if (narrativeEl) renderNarrativePanel(narrativeEl, state, data, advance);
