@@ -62,7 +62,6 @@ const JOURNEY_ARTISTS = [
   { id: 'Beyoncé', label: 'Beyoncé', genre: 'r&b' },
   { id: 'Frank Ocean', label: 'Frank Ocean', genre: 'r&b' },
   { id: 'Future', label: 'Future', genre: 'rap' },
-  { id: 'Queen', label: 'Queen', genre: 'rock' },
 ];
 
 const JOURNEY_OVERLAY_FEATURES = [
@@ -1524,12 +1523,21 @@ function renderJourneyLegend(legendEl, beat, state) {
       legendEl.append(feat);
     }
   } else if (beat === 'compare') {
+    const isCustom = !JOURNEY_ARTISTS.some((a) => a.id === state.artist);
+    if (isCustom) {
+      const color = GENRE_COLORS[state.genre] ?? '#c67b5c';
+      const item = document.createElement('span');
+      item.className = 'journey-legend__item';
+      item.style.setProperty('--legend-color', color);
+      item.innerHTML = `<i></i> ${state.artist}`;
+      legendEl.append(item);
+    }
     JOURNEY_ARTISTS.forEach((artist) => {
       const color = GENRE_COLORS[artist.genre] ?? '#c67b5c';
       const item = document.createElement('span');
       item.className = 'journey-legend__item';
       item.style.setProperty('--legend-color', color);
-      item.style.opacity = artist.id === state.artist ? '1' : '0.45';
+      item.style.opacity = artist.id === state.artist ? '1' : (isCustom ? '0.3' : '0.45');
       item.innerHTML = `<i></i> ${artist.label}`;
       legendEl.append(item);
     });
@@ -1549,10 +1557,10 @@ function renderJourneyLegend(legendEl, beat, state) {
   }
 }
 
-function renderNarrativePanel(el, state, data, onAdvance) {
+function renderNarrativePanel(el, state, data, onAdvance, onSoundGuess) {
   el.replaceChildren();
   el.style.setProperty('--narrative-color', GENRE_COLORS[state.genre] ?? 'var(--accent)');
-  const { beat, yearIndex, artist, soundFeature, genre } = state;
+  const { beat, yearIndex, artist, soundFeature, soundGuess, genre } = state;
 
   if (beat === 'reveal') {
     const curr = data[yearIndex];
@@ -1592,14 +1600,40 @@ function renderNarrativePanel(el, state, data, onAdvance) {
         ${!isLast ? '<button type="button" class="btn-journey-skip" id="btn-journey-skip">Skip to full arc →</button>' : ''}
       </div>
     `;
-  } else if (beat === 'sound') {
-    const narrative = soundFeature ? buildSoundNarrative(artist, soundFeature) : '';
+  } else if (beat === 'soundguess') {
+    const name = artist.split(' ')[0];
     el.innerHTML = `
-      <p class="label">Their sound</p>
-      <h3>What shaped ${artist.split(' ')[0]}'s sound?</h3>
+      <p class="label">Your turn</p>
+      <h3>What shaped ${name}'s sound?</h3>
+      <p>You've seen the full popularity arc. Which audio trait do you think tracked it most closely?</p>
+      <div class="journey-guess-grid" id="journey-guess-grid"></div>
+    `;
+    const grid = el.querySelector('#journey-guess-grid');
+    JOURNEY_OVERLAY_FEATURES.forEach((feat) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'journey-guess-btn';
+      btn.textContent = feat.label;
+      btn.addEventListener('click', () => { if (onSoundGuess) onSoundGuess(feat.key); });
+      grid.append(btn);
+    });
+  } else if (beat === 'sound') {
+    const name = artist.split(' ')[0];
+    const narrative = soundFeature ? buildSoundNarrative(artist, soundFeature) : '';
+    const guessedFeat = JOURNEY_OVERLAY_FEATURES.find((f) => f.key === soundGuess);
+    const correct = soundGuess === soundFeature?.key;
+    let resultLine = '';
+    if (soundGuess && soundFeature) {
+      resultLine = correct
+        ? `<p class="narrative-guess-result is-correct">✓ You got it — it was ${soundFeature.label.toLowerCase()}.</p>`
+        : `<p class="narrative-guess-result is-wrong">✗ You picked ${guessedFeat?.label ?? soundGuess} — it was actually ${soundFeature.label.toLowerCase()}.</p>`;
+    }
+    el.innerHTML = `
+      <p class="label">The reveal</p>
+      <h3>${soundFeature ? soundFeature.label : 'The sound'}</h3>
+      ${resultLine}
       <p>${narrative}</p>
-      ${soundFeature ? `<p class="narrative-meta">${soundFeature.label} is shown as the dashed line, scaled 0–100 to match popularity.</p>` : ''}
-      <p class="narrative-meta">Popularity reflects Spotify streaming as of ~2020, not historical chart position.</p>
+      ${soundFeature ? `<p class="narrative-meta">Dashed line = ${soundFeature.label.toLowerCase()}, scaled 0–100.</p>` : ''}
       <div class="narrative-footer">
         <button type="button" class="btn-journey-next" id="btn-journey-next">Zoom out →</button>
       </div>
@@ -1679,6 +1713,7 @@ function initArtistJourney(pool) {
     beat: 'pick',
     yearIndex: 0,
     soundFeature: null,
+    soundGuess: null,
   };
 
   JOURNEY_ARTISTS.forEach((artist) => {
@@ -1694,21 +1729,213 @@ function initArtistJourney(pool) {
       pickerEl.querySelectorAll('.artist-pick-btn').forEach((b) => {
         b.classList.toggle('is-active', b.dataset.artist === state.artist);
       });
+      clearSearch();
     });
     pickerEl.append(btn);
   });
   pickerEl.querySelector('.artist-pick-btn').classList.add('is-active');
 
+  // "Other artists" toggle button — lives inside artist-picker, inline with presets
+  const searchToggleBtn = document.createElement('button');
+  searchToggleBtn.type = 'button';
+  searchToggleBtn.id = 'artist-search-toggle';
+  searchToggleBtn.className = 'artist-search-toggle';
+  searchToggleBtn.textContent = 'Other popular artists';
+  pickerEl.append(searchToggleBtn);
+
+  // Custom artist search — artists with 5+ distinct years all from 2000 onwards
+  const artistYearSets = {};
+  pool.forEach((t) => {
+    if (!t.track_artist || !t.track_album_release_date) return;
+    const year = +t.track_album_release_date.slice(0, 4);
+    if (!year || year < 2000) return;
+    if (!artistYearSets[t.track_artist]) artistYearSets[t.track_artist] = new Set();
+    artistYearSets[t.track_artist].add(year);
+  });
+  const allArtistIds = Object.entries(artistYearSets)
+    .filter(([, years]) => years.size >= 7)
+    .map(([id]) => id)
+    .sort((a, b) => a.localeCompare(b));
+
+  function inferArtistGenre(artistId) {
+    const tracks = pool.filter((t) => t.track_artist === artistId);
+    if (!tracks.length) return 'pop';
+    const counts = {};
+    tracks.forEach((t) => { counts[t.playlist_genre] = (counts[t.playlist_genre] ?? 0) + 1; });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'pop';
+  }
+
+  const searchInputEl = document.getElementById('artist-search-input');
+  const searchResultsEl = document.getElementById('artist-search-results');
+  const searchWrapEl = document.getElementById('artist-search-wrap');
+  // Move inline into artist-picker so it sits next to the toggle button
+  if (searchWrapEl) pickerEl.append(searchWrapEl);
+
+  function setSearchStatus(msg, type) {
+    if (!searchWrapEl) return;
+    let el = searchWrapEl.querySelector('.artist-search-status');
+    if (!msg) { el?.remove(); return; }
+    if (!el) {
+      el = document.createElement('p');
+      el.className = 'artist-search-status';
+      searchWrapEl.append(el);
+    }
+    el.textContent = msg;
+    el.className = `artist-search-status ${type ?? ''}`;
+  }
+
+  const searchToggleEl = document.getElementById('artist-search-toggle');
+
+  function closeSearchResults() {
+    if (searchResultsEl) searchResultsEl.hidden = true;
+  }
+
+  function clearSearch() {
+    if (searchInputEl) {
+      searchInputEl.value = '';
+      searchInputEl.classList.remove('is-selected');
+    }
+    closeSearchResults();
+    setSearchStatus('');
+    searchToggleBtn.classList.remove('is-active');
+    if (searchWrapEl) searchWrapEl.hidden = true;
+  }
+
+  searchToggleEl?.addEventListener('click', () => {
+    if (!searchWrapEl) return;
+    const opening = searchWrapEl.hidden;
+    searchWrapEl.hidden = !opening;
+    searchToggleBtn.classList.toggle('is-active', opening);
+    if (opening) searchInputEl?.focus();
+  });
+
+  function selectCustomArtist(artistId) {
+    if (!artistDataMap[artistId]) {
+      artistDataMap[artistId] = buildArtistJourneyData(pool, artistId);
+    }
+    const data = artistDataMap[artistId];
+    if (data.length < 1) {
+      if (searchInputEl) searchInputEl.value = artistId;
+      closeSearchResults();
+      setSearchStatus(`No data found for "${artistId}" — try a more prominent artist.`, 'is-error');
+      searchInputEl?.classList.remove('is-selected');
+      return;
+    }
+    state.artist = artistId;
+    state.genre = inferArtistGenre(artistId);
+    pickerEl.querySelectorAll('.artist-pick-btn').forEach((b) => b.classList.remove('is-active'));
+    if (searchInputEl) {
+      searchInputEl.value = artistId;
+      searchInputEl.classList.add('is-selected');
+    }
+    closeSearchResults();
+    if (data.length < 3) {
+      setSearchStatus(`Found ${data.length} year${data.length !== 1 ? 's' : ''} of data — journey may be brief.`, 'is-warn');
+    } else {
+      setSearchStatus('');
+    }
+  }
+
+  function showSearchResults(matches) {
+    if (!searchResultsEl) return;
+    searchResultsEl.replaceChildren();
+    matches.forEach((name) => {
+      const li = document.createElement('li');
+      li.className = 'artist-search-result';
+      li.setAttribute('role', 'option');
+      li.textContent = name;
+      li.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        selectCustomArtist(name);
+      });
+      searchResultsEl.append(li);
+    });
+    searchResultsEl.hidden = false;
+  }
+
+  searchInputEl?.addEventListener('input', () => {
+    const q = searchInputEl.value.trim().toLowerCase();
+    searchInputEl.classList.remove('is-selected');
+    if (q.length < 2) { closeSearchResults(); return; }
+    const matches = allArtistIds.filter((a) => a.toLowerCase().includes(q)).slice(0, 10);
+    if (!matches.length) { closeSearchResults(); return; }
+    showSearchResults(matches);
+  });
+
+  searchInputEl?.addEventListener('blur', () => { setTimeout(closeSearchResults, 150); });
+
+  searchInputEl?.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeSearchResults(); searchInputEl.blur(); }
+    if (e.key === 'Enter') {
+      const first = searchResultsEl?.querySelector('.artist-search-result');
+      if (first) { selectCustomArtist(first.textContent); }
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#artist-search-wrap')) closeSearchResults();
+  });
+
+  const nowPlayingEl = document.getElementById('journey-now-playing');
+  const nowPlayingLabelEl = document.getElementById('journey-now-playing-label');
+  const nowPlayingEmbedEl = document.getElementById('journey-now-playing-embed');
+
+  function getArtistTopTrack(artistId) {
+    const data = artistDataMap[artistId] ?? [];
+    return data
+      .map((d) => d.topTrack)
+      .filter(Boolean)
+      .sort((a, b) => b.track_popularity - a.track_popularity)[0] ?? null;
+  }
+
+  function showNowPlaying(artistId) {
+    if (!nowPlayingEl || !nowPlayingEmbedEl) return;
+    const track = getArtistTopTrack(artistId);
+    if (!track?.track_id) { nowPlayingEl.hidden = true; return; }
+    const artistLabel = JOURNEY_ARTISTS.find((a) => a.id === artistId)?.label ?? artistId;
+    if (nowPlayingLabelEl) nowPlayingLabelEl.textContent = `${artistLabel}'s most popular song`;
+    nowPlayingEmbedEl.replaceChildren();
+    const iframe = document.createElement('iframe');
+    iframe.src = `https://open.spotify.com/embed/track/${encodeURIComponent(track.track_id)}?utm_source=generator&autoplay=1`;
+    iframe.width = '100%';
+    iframe.height = '80';
+    iframe.setAttribute('frameborder', '0');
+    iframe.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
+    iframe.title = `${artistLabel}'s most popular song: ${track.track_name}`;
+    nowPlayingEmbedEl.appendChild(iframe);
+    nowPlayingEl.hidden = false;
+  }
+
+  function hideNowPlaying() {
+    if (!nowPlayingEl) return;
+    nowPlayingEl.hidden = true;
+    if (nowPlayingEmbedEl) nowPlayingEmbedEl.replaceChildren();
+  }
+
+  const journeySection = document.getElementById('artist-journey');
+
   function resetJourney() {
     state.beat = 'pick';
     state.yearIndex = 0;
     state.soundFeature = null;
-    pickerEl.querySelectorAll('.artist-pick-btn').forEach((b) => { b.disabled = false; });
+    state.soundGuess = null;
+    // Restore preset button selection to default
+    const defaultArtist = JOURNEY_ARTISTS.find((a) => a.id === state.artist) ?? JOURNEY_ARTISTS[0];
+    state.artist = defaultArtist.id;
+    state.genre = defaultArtist.genre;
+    pickerEl.querySelectorAll('.artist-pick-btn').forEach((b) => {
+      b.disabled = false;
+      b.classList.toggle('is-active', b.dataset.artist === defaultArtist.id);
+    });
+    clearSearch();
+    if (searchWrapEl) searchWrapEl.hidden = true;
     pickPanel.classList.remove('is-compact');
     storyPanel.hidden = true;
     setArtistJourneyChartOpen(false);
+    journeySection?.classList.remove('is-journey-active');
     if (progressEl) progressEl.hidden = true;
     if (tooltipEl) tooltipEl.hidden = true;
+    hideNowPlaying();
     d3.select(svgEl).selectAll('g.journey-root').selectAll('*').remove();
     if (legendEl) legendEl.replaceChildren();
     if (narrativeEl) narrativeEl.replaceChildren();
@@ -1718,26 +1945,37 @@ function initArtistJourney(pool) {
     state.beat = 'reveal';
     state.yearIndex = 0;
     state.soundFeature = null;
+    state.soundGuess = null;
     pickerEl.querySelectorAll('.artist-pick-btn').forEach((b) => { b.disabled = true; });
     pickPanel.classList.add('is-compact');
     storyPanel.hidden = false;
     setArtistJourneyChartOpen(true);
+    journeySection?.classList.add('is-journey-active');
     if (progressEl) progressEl.hidden = false;
+    showNowPlaying(state.artist);
     d3.select(svgEl).selectAll('g.journey-root').selectAll('*').remove();
     render();
   });
 
   document.getElementById('btn-journey-reset')?.addEventListener('click', resetJourney);
 
+  function onSoundGuess(featureKey) {
+    state.soundGuess = featureKey;
+    state.beat = 'sound';
+    render();
+  }
+
   function advance(action) {
     const data = artistDataMap[state.artist] ?? [];
     if (state.beat === 'reveal') {
       if (action === 'skip' || state.yearIndex >= data.length - 1) {
         state.soundFeature = findMostCorrelatedFeature(data);
-        state.beat = 'sound';
+        state.beat = 'soundguess';
       } else {
         state.yearIndex++;
       }
+    } else if (state.beat === 'soundguess') {
+      state.beat = 'sound';
     } else if (state.beat === 'sound') {
       state.beat = 'compare';
     } else if (state.beat === 'compare') {
@@ -1754,15 +1992,18 @@ function initArtistJourney(pool) {
     const data = artistDataMap[state.artist] ?? [];
     if (tooltipEl) tooltipEl.hidden = true;
 
-    renderJourneyProgress(progressEl, state.beat);
+    const beatForProgress = state.beat === 'soundguess' ? 'sound' : state.beat;
+    renderJourneyProgress(progressEl, beatForProgress);
 
     if (state.beat === 'reveal') drawRevealChart(svgEl, data, state, tooltipEl);
+    else if (state.beat === 'soundguess') drawRevealChart(svgEl, data, { ...state, yearIndex: data.length - 1 }, tooltipEl);
     else if (state.beat === 'sound') drawSoundChart(svgEl, data, state, tooltipEl);
     else if (state.beat === 'compare') drawCompareChart(svgEl, state, artistDataMap, tooltipEl);
     else if (state.beat === 'genre') drawFeatureTakeawayChart(svgEl, data, state, genreData, tooltipEl);
 
-    if (legendEl) renderJourneyLegend(legendEl, state.beat, state);
-    if (narrativeEl) renderNarrativePanel(narrativeEl, state, data, advance);
+    const beatForLegend = state.beat === 'soundguess' ? 'reveal' : state.beat;
+    if (legendEl) renderJourneyLegend(legendEl, beatForLegend, state);
+    if (narrativeEl) renderNarrativePanel(narrativeEl, state, data, advance, onSoundGuess);
   }
 
   const resizeObserver = new ResizeObserver(() => { if (state.beat !== 'pick') render(); });
@@ -1903,6 +2144,42 @@ function initStoryScroll() {
   update();
   window.addEventListener('scroll', update, { passive: true });
   window.addEventListener('resize', update);
+
+  function scrollToChapter(targetIndex) {
+    if (window.matchMedia('(max-width: 860px)').matches) return;
+    const n = chapters.length;
+    const clamped = Math.max(0, Math.min(n - 1, targetIndex));
+    const targetProgress = (clamped + 0.5) / n;
+    const throughSpacers = targetProgress * spacerScrollDistance();
+    const scrolledIntoStory = throughSpacers + storyStageScrollHeight();
+    const storyDocTop = story.getBoundingClientRect().top + window.scrollY;
+    const targetScrollY = storyDocTop - stickyTopPx + scrolledIntoStory;
+    window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
+  }
+
+  const arrowHintEl = document.getElementById('arrow-nav-hint');
+  let arrowHintDismissed = false;
+
+  function dismissArrowHint() {
+    if (arrowHintDismissed) return;
+    arrowHintDismissed = true;
+    arrowHintEl?.classList.add('is-hidden');
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (window.matchMedia('(max-width: 860px)').matches) return;
+    const tag = document.activeElement?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      dismissArrowHint();
+      scrollToChapter(activeIndex + 1);
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      dismissArrowHint();
+      scrollToChapter(activeIndex - 1);
+    }
+  });
 }
 
 function onGuess(tracks, state, guessedGenre) {

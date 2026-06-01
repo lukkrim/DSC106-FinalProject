@@ -266,17 +266,40 @@
 
       <div class="artist-journey__body">
       <div class="journey-pick-panel" id="journey-pick-panel">
-        <p class="journey-pick-prompt">Choose an artist to follow</p>
+        <p class="journey-pick-prompt">Recommended</p>
         <div class="artist-picker" id="artist-picker" role="group" aria-label="Select artist"></div>
         <button type="button" class="btn-journey-start" id="btn-journey-start">
           Start their story →
         </button>
+        <div class="artist-search-wrap" id="artist-search-wrap" hidden>
+          <p class="artist-search-label">Artists with 5+ years in our data</p>
+          <div class="artist-search-field">
+            <input
+              type="search"
+              id="artist-search-input"
+              class="artist-search-input"
+              placeholder="Search artists..."
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="Search for an artist with 5 or more years of data"
+              aria-autocomplete="list"
+              aria-controls="artist-search-results"
+            />
+            <ul
+              class="artist-search-results"
+              id="artist-search-results"
+              role="listbox"
+              aria-label="Artist search results"
+              hidden
+            ></ul>
+          </div>
+        </div>
       </div>
 
       <div class="journey-story" id="journey-story" hidden>
         <div class="journey-story__toolbar">
           <button type="button" class="btn-journey-reset" id="btn-journey-reset">
-            Reset journey
+            ← Pick a different artist
           </button>
         </div>
         <div class="journey-progress" id="journey-progress" aria-label="Story progress" hidden></div>
@@ -292,6 +315,10 @@
               <div class="journey-tooltip" id="journey-tooltip" hidden></div>
             </div>
             <div class="journey-legend" id="journey-legend"></div>
+            <div class="journey-now-playing" id="journey-now-playing" hidden>
+              <p class="journey-now-playing__label" id="journey-now-playing-label">Now playing</p>
+              <div class="journey-now-playing__embed" id="journey-now-playing-embed"></div>
+            </div>
           </div>
           <aside class="journey-narrative" id="journey-narrative"></aside>
         </div>
@@ -301,5 +328,9 @@
       </div>
     </div>
   </main>
+
+  <div class="arrow-nav-hint" id="arrow-nav-hint" aria-hidden="true">
+    ↑ ↓ arrow keys to navigate sections
+  </div>
 </body>
 </html>
