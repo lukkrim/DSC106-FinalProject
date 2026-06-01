@@ -3,6 +3,9 @@ import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm';
 const DATA_URL = 'data/spotify_songs.csv';
 const TRACK_COUNT = 5;
 
+/** Re-sync sticky chapter UI (e.g. after game completes on chapter 0) */
+let refreshStoryChapter = () => {};
+
 const GENRES = [
   { id: 'edm', label: 'EDM' },
   { id: 'rap', label: 'Rap' },
@@ -449,6 +452,7 @@ function summarizeResults(tracks, state) {
   const lede = document.getElementById('game-summary-lede');
   const stats = document.getElementById('game-summary-stats');
   const list = document.getElementById('game-summary-list');
+  const playAgain = document.getElementById('btn-play-again');
   if (!summary || !lede || !stats || !list) return;
 
   const percent = Math.round((correctCount / tracks.length) * 100);
@@ -499,6 +503,9 @@ function summarizeResults(tracks, state) {
   });
 
   summary.hidden = false;
+  if (playAgain) playAgain.hidden = false;
+  document.getElementById('genre-guess')?.classList.add('is-complete');
+  refreshStoryChapter();
 }
 
 function maybeShowFinalSummary(tracks, state) {
@@ -1644,6 +1651,12 @@ function renderNarrativePanel(el, state, data, onAdvance) {
   el.querySelector('#btn-journey-skip')?.addEventListener('click', () => onAdvance('skip'));
 }
 
+function setArtistJourneyChartOpen(open) {
+  const section = document.getElementById('artist-journey');
+  if (!section) return;
+  section.classList.toggle('is-journey-chart-open', open);
+}
+
 function initArtistJourney(pool) {
   const pickPanel = document.getElementById('journey-pick-panel');
   const storyPanel = document.getElementById('journey-story');
@@ -1686,16 +1699,35 @@ function initArtistJourney(pool) {
   });
   pickerEl.querySelector('.artist-pick-btn').classList.add('is-active');
 
+  function resetJourney() {
+    state.beat = 'pick';
+    state.yearIndex = 0;
+    state.soundFeature = null;
+    pickerEl.querySelectorAll('.artist-pick-btn').forEach((b) => { b.disabled = false; });
+    pickPanel.classList.remove('is-compact');
+    storyPanel.hidden = true;
+    setArtistJourneyChartOpen(false);
+    if (progressEl) progressEl.hidden = true;
+    if (tooltipEl) tooltipEl.hidden = true;
+    d3.select(svgEl).selectAll('g.journey-root').selectAll('*').remove();
+    if (legendEl) legendEl.replaceChildren();
+    if (narrativeEl) narrativeEl.replaceChildren();
+  }
+
   startBtn.addEventListener('click', () => {
     state.beat = 'reveal';
     state.yearIndex = 0;
     state.soundFeature = null;
     pickerEl.querySelectorAll('.artist-pick-btn').forEach((b) => { b.disabled = true; });
-    d3.select(svgEl).selectAll('g.journey-root').selectAll('*').remove();
-    pickPanel.hidden = true;
+    pickPanel.classList.add('is-compact');
     storyPanel.hidden = false;
+    setArtistJourneyChartOpen(true);
+    if (progressEl) progressEl.hidden = false;
+    d3.select(svgEl).selectAll('g.journey-root').selectAll('*').remove();
     render();
   });
+
+  document.getElementById('btn-journey-reset')?.addEventListener('click', resetJourney);
 
   function advance(action) {
     const data = artistDataMap[state.artist] ?? [];
@@ -1711,12 +1743,7 @@ function initArtistJourney(pool) {
     } else if (state.beat === 'compare') {
       state.beat = 'genre';
     } else if (state.beat === 'genre') {
-      state.beat = 'pick';
-      state.yearIndex = 0;
-      state.soundFeature = null;
-      pickerEl.querySelectorAll('.artist-pick-btn').forEach((b) => { b.disabled = false; });
-      pickPanel.hidden = false;
-      storyPanel.hidden = true;
+      resetJourney();
       return;
     }
     render();
@@ -1742,6 +1769,142 @@ function initArtistJourney(pool) {
   resizeObserver.observe(svgEl);
 }
 
+function initStoryScroll() {
+  const story = document.querySelector('.story-scroll');
+  if (!story) return;
+
+  const chapters = [
+    document.getElementById('genre-guess'),
+    document.getElementById('genre-explorer'),
+    document.getElementById('performance-explorer'),
+    document.getElementById('artist-journey'),
+  ].filter(Boolean);
+  const summaryEl = document.getElementById('game-summary');
+  if (!chapters.length) return;
+
+  const spacerCount = story.querySelectorAll('.story-scroll__spacer').length;
+  if (spacerCount !== chapters.length) {
+    story.querySelectorAll('.story-scroll__spacer').forEach((spacer) => spacer.remove());
+    chapters.forEach(() => {
+      const spacer = document.createElement('div');
+      spacer.className = 'story-scroll__spacer';
+      spacer.setAttribute('aria-hidden', 'true');
+      story.append(spacer);
+    });
+  }
+
+  const stage = story.querySelector('.story-stage');
+  const spacers = [...story.querySelectorAll('.story-scroll__spacer')];
+  const stickyTopPx = stage
+    ? parseFloat(getComputedStyle(stage).top) || 16
+    : 16;
+  let activeIndex = -1;
+
+  function updateSummaryForChapter(index) {
+    const guess = document.getElementById('genre-guess');
+    const guessComplete = guess?.classList.contains('is-complete');
+    const showSummary = index === 0 && guessComplete;
+
+    if (guess && index === 0) {
+      guess.classList.toggle('is-story-active', !showSummary);
+    }
+
+    if (!summaryEl) return;
+    summaryEl.hidden = !showSummary;
+    summaryEl.classList.toggle('is-story-active', showSummary);
+    summaryEl.toggleAttribute('inert', !showSummary);
+    summaryEl.setAttribute('aria-hidden', String(!showSummary));
+  }
+
+  function setActive(index) {
+    if (index !== activeIndex) {
+      activeIndex = index;
+      chapters.forEach((chapter, i) => {
+        const active = i === index;
+        chapter.hidden = !active;
+        chapter.classList.toggle('is-story-active', active);
+        chapter.toggleAttribute('inert', !active);
+        chapter.setAttribute('aria-hidden', String(!active));
+      });
+    }
+    updateSummaryForChapter(index);
+  }
+
+  refreshStoryChapter = () => {
+    if (window.matchMedia('(max-width: 860px)').matches) return;
+    setActive(activeIndex < 0 ? 0 : activeIndex);
+  };
+
+  function spacerScrollDistance() {
+    return Math.max(
+      1,
+      spacers.reduce((sum, el) => sum + el.offsetHeight, 0),
+    );
+  }
+
+  /** Fixed stage height for scroll math (visual stage may shrink for guess/summary) */
+  function storyStageScrollHeight() {
+    return Math.max(320, window.innerHeight - 32);
+  }
+
+  /** Progress through spacer stack only, after the sticky stage has pinned */
+  function storyScrollProgress() {
+    const storyTop = story.getBoundingClientRect().top;
+    if (storyTop > stickyTopPx) return 0;
+
+    const scrolledIntoStory = stickyTopPx - storyTop;
+    const throughSpacers = Math.max(0, scrolledIntoStory - storyStageScrollHeight());
+    return Math.min(0.999, throughSpacers / spacerScrollDistance());
+  }
+
+  function chapterFromProgress(progress, n) {
+    return Math.min(n - 1, Math.floor(progress * n));
+  }
+
+  function resolveChapter(progress, n) {
+    const candidate = chapterFromProgress(progress, n);
+    if (activeIndex < 0) return candidate;
+
+    const hyst = 0.1 / n;
+    if (candidate > activeIndex) {
+      const boundary = candidate / n;
+      return progress >= boundary - hyst ? candidate : activeIndex;
+    }
+    if (candidate < activeIndex) {
+      const boundary = activeIndex / n;
+      return progress < boundary - hyst ? candidate : activeIndex;
+    }
+    return activeIndex;
+  }
+
+  function update() {
+    if (window.matchMedia('(max-width: 860px)').matches) {
+      activeIndex = 0;
+      chapters.forEach((chapter) => {
+        chapter.hidden = false;
+        chapter.classList.remove('is-story-active');
+        chapter.removeAttribute('inert');
+        chapter.removeAttribute('aria-hidden');
+      });
+      if (summaryEl) {
+        const guessComplete = document.getElementById('genre-guess')?.classList.contains('is-complete');
+        summaryEl.hidden = !guessComplete;
+        summaryEl.classList.remove('is-story-active');
+        summaryEl.removeAttribute('inert');
+        summaryEl.removeAttribute('aria-hidden');
+      }
+      return;
+    }
+
+    const n = chapters.length;
+    setActive(resolveChapter(storyScrollProgress(), n));
+  }
+
+  update();
+  window.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update);
+}
+
 function onGuess(tracks, state, guessedGenre) {
   const i = state.activeIndex;
   if (state.answers[i]) return;
@@ -1765,10 +1928,10 @@ function onNextTrack(tracks, state) {
   }
 }
 
-function wireGenreButtons(tracks, state) {
+function wireGenreButtons(getTracks, state) {
   document.querySelectorAll('.genre-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      onGuess(tracks, state, btn.dataset.genre);
+      onGuess(getTracks(), state, btn.dataset.genre);
     });
   });
 }
@@ -1789,23 +1952,48 @@ async function init() {
   const pool = dedupeByTrackName(raw)
     .filter(hasRequiredTrackData)
     .filter((d) => GENRES.some((g) => g.id === d.playlist_genre));
-  const tracks = pickRandomTracks(pool, TRACK_COUNT);
+  let tracks = pickRandomTracks(pool, TRACK_COUNT);
 
   const state = {
     activeIndex: 0,
     answers: Array(TRACK_COUNT).fill(null),
   };
 
-  wireGenreButtons(tracks, state);
+  function resetGuessGame() {
+    tracks = pickRandomTracks(pool, TRACK_COUNT);
+    state.activeIndex = 0;
+    state.answers = Array(TRACK_COUNT).fill(null);
+
+    const summary = document.getElementById('game-summary');
+    const playAgain = document.getElementById('btn-play-again');
+    const guess = document.getElementById('genre-guess');
+    if (summary) summary.hidden = true;
+    if (playAgain) playAgain.hidden = true;
+    guess?.classList.remove('is-complete');
+
+    updatePanel(tracks, state);
+    refreshStoryChapter();
+    requestAnimationFrame(() => {
+      document.querySelector('.story-scroll')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+  }
+
+  wireGenreButtons(() => tracks, state);
   wireSpotifyPlayButton();
   initGenreExplorer(pool);
   initRandomTrackPlayer(pool);
   initPerformanceExplorer(pool);
   initArtistJourney(pool);
+  initStoryScroll();
 
   document.getElementById('btn-next-track').addEventListener('click', () => {
     onNextTrack(tracks, state);
   });
+
+  document.getElementById('btn-play-again')?.addEventListener('click', resetGuessGame);
 
   updatePanel(tracks, state);
 }

@@ -11,8 +11,8 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet"
   >
-  <link rel="stylesheet" href="style.css?v=10">
-  <script src="main.js?v=3" type="module"></script>
+  <link rel="stylesheet" href="style.css?v=25">
+  <script src="main.js?v=5" type="module"></script>
 </head>
 <body>
   <header class="site-header">
@@ -28,105 +28,108 @@
   </header>
 
   <main>
-    <section id="genre-guess" class="genre-guess" aria-labelledby="genre-guess-title">
-      <h2 id="genre-guess-title">Guess the genre</h2>
-      <p class="section-note">
-        Listen to each preview, then guess the genre.
-      </p>
+    <div class="story-scroll" aria-label="Interactive visualization story">
+      <div class="story-stage">
+      <section id="genre-guess" class="genre-guess" aria-labelledby="genre-guess-title">
+        <h2 id="genre-guess-title">Guess the genre</h2>
+        <p class="section-note">
+          Listen to each preview, then guess the genre.
+        </p>
 
-      <div class="genre-guess__layout">
-        <!-- Left: feature fingerprint -->
-        <section
-          class="feature-card"
-          id="feature-fingerprint"
-          aria-labelledby="feature-fingerprint-title"
-        >
-          <div class="feature-card__header">
-            <p class="label">Sonic fingerprint</p>
-            <h3 id="feature-fingerprint-title">Mystery profile</h3>
-            <p class="feature-card__status" id="feature-card-status"></p>
-          </div>
-          <div class="feature-bars" id="feature-bars"></div>
-          <p class="feature-summary" id="feature-summary"></p>
-        </section>
+        <div class="genre-guess__layout">
+          <section
+            class="feature-card"
+            id="feature-fingerprint"
+            aria-labelledby="feature-fingerprint-title"
+          >
+            <div class="feature-card__header">
+              <p class="label">Sonic fingerprint</p>
+              <h3 id="feature-fingerprint-title">Mystery profile</h3>
+              <p class="feature-card__status" id="feature-card-status"></p>
+            </div>
+            <div class="feature-bars" id="feature-bars"></div>
+            <p class="feature-summary" id="feature-summary"></p>
+          </section>
 
-        <!-- Right: now playing + guess + reveal -->
-        <div class="guess-panel">
-          <div class="guess-panel__now-playing">
-            <p class="label">Now playing</p>
-            <h3 id="now-playing-title">Song 1</h3>
-            <div class="spotify-embed-wrap" id="spotify-embed-wrap">
-              <p class="label">Listen</p>
-              <div class="spotify-embed" id="spotify-embed" aria-label="Spotify track preview"></div>
-              <button
-                type="button"
-                class="spotify-play-btn"
-                id="spotify-play-btn"
-                aria-label="Play preview"
-                disabled
-              >
-                <span class="spotify-play-btn__icon" aria-hidden="true"></span>
+          <div class="guess-panel">
+            <div class="guess-panel__now-playing">
+              <p class="label">Now playing</p>
+              <h3 id="now-playing-title">Song 1</h3>
+              <div class="spotify-embed-wrap" id="spotify-embed-wrap">
+                <p class="label">Listen</p>
+                <div class="spotify-embed" id="spotify-embed" aria-label="Spotify track preview"></div>
+                <button
+                  type="button"
+                  class="spotify-play-btn"
+                  id="spotify-play-btn"
+                  aria-label="Play preview"
+                  disabled
+                >
+                  <span class="spotify-play-btn__icon" aria-hidden="true"></span>
+                </button>
+              </div>
+            </div>
+
+            <div class="guess-panel__controls" id="guess-controls">
+              <p class="label">Guess the genre</p>
+              <div class="genre-buttons" id="genre-buttons" role="group" aria-label="Genre choices">
+                <button type="button" class="genre-btn" data-genre="edm">EDM</button>
+                <button type="button" class="genre-btn" data-genre="rap">Rap</button>
+                <button type="button" class="genre-btn" data-genre="r&b">R&amp;B</button>
+                <button type="button" class="genre-btn" data-genre="latin">Latin</button>
+                <button type="button" class="genre-btn" data-genre="pop">Pop</button>
+                <button type="button" class="genre-btn" data-genre="rock">Rock</button>
+              </div>
+            </div>
+
+            <div class="guess-panel__reveal" id="guess-reveal" hidden>
+              <p class="reveal-result" id="reveal-result"></p>
+              <dl class="reveal-details">
+                <div>
+                  <dt>Track</dt>
+                  <dd id="reveal-track-name"></dd>
+                </div>
+                <div>
+                  <dt>Artist</dt>
+                  <dd id="reveal-artist"></dd>
+                </div>
+                <div>
+                  <dt>Genre</dt>
+                  <dd id="reveal-genre"></dd>
+                </div>
+              </dl>
+              <p class="reveal-explanation" id="reveal-explanation"></p>
+              <button type="button" class="btn-next" id="btn-next-track" hidden>
+                Next song
               </button>
             </div>
-          </div>
 
-          <div class="guess-panel__controls" id="guess-controls">
-            <p class="label">Guess the genre</p>
-            <div class="genre-buttons" id="genre-buttons" role="group" aria-label="Genre choices">
-              <button type="button" class="genre-btn" data-genre="edm">EDM</button>
-              <button type="button" class="genre-btn" data-genre="rap">Rap</button>
-              <button type="button" class="genre-btn" data-genre="r&b">R&amp;B</button>
-              <button type="button" class="genre-btn" data-genre="latin">Latin</button>
-              <button type="button" class="genre-btn" data-genre="pop">Pop</button>
-              <button type="button" class="genre-btn" data-genre="rock">Rock</button>
-            </div>
+            <p class="progress-text" id="progress-text">Track 1 of 5</p>
           </div>
-
-          <div class="guess-panel__reveal" id="guess-reveal" hidden>
-            <p class="reveal-result" id="reveal-result"></p>
-            <dl class="reveal-details">
-              <div>
-                <dt>Track</dt>
-                <dd id="reveal-track-name"></dd>
-              </div>
-              <div>
-                <dt>Artist</dt>
-                <dd id="reveal-artist"></dd>
-              </div>
-              <div>
-                <dt>Genre</dt>
-                <dd id="reveal-genre"></dd>
-              </div>
-            </dl>
-            <p class="reveal-explanation" id="reveal-explanation"></p>
-            <button type="button" class="btn-next" id="btn-next-track" hidden>
-              Next song
-            </button>
-          </div>
-
-          <p class="progress-text" id="progress-text">Track 1 of 5</p>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section
-      class="game-summary"
-      id="game-summary"
-      aria-labelledby="game-summary-title"
-      hidden
-    >
-      <p class="label">Game summary</p>
-      <h2 id="game-summary-title">Your genre scorecard</h2>
-      <p class="game-summary__lede" id="game-summary-lede"></p>
-      <div class="game-summary__stats" id="game-summary-stats"></div>
-      <div class="game-summary__list" id="game-summary-list"></div>
-    </section>
+      <section
+        class="game-summary"
+        id="game-summary"
+        aria-labelledby="game-summary-title"
+        hidden
+      >
+        <p class="label">Game summary</p>
+        <h2 id="game-summary-title">Your genre scorecard</h2>
+        <p class="game-summary__lede" id="game-summary-lede"></p>
+        <div class="game-summary__stats" id="game-summary-stats"></div>
+        <div class="game-summary__list" id="game-summary-list"></div>
+        <button type="button" class="btn-play-again" id="btn-play-again" hidden>
+          Play it again
+        </button>
+      </section>
 
-    <section
-      class="genre-explorer"
-      id="genre-explorer"
-      aria-labelledby="genre-explorer-title"
-    >
+      <section
+        class="genre-explorer"
+        id="genre-explorer"
+        aria-labelledby="genre-explorer-title"
+      >
       <div class="genre-explorer__header">
         <p class="label">Explore the dataset</p>
         <h2 id="genre-explorer-title">Genre fingerprints</h2>
@@ -180,13 +183,13 @@
           <p class="genre-profile__note" id="genre-profile-note"></p>
         </aside>
       </div>
-    </section>
+      </section>
 
-    <section
-      class="performance-explorer"
-      id="performance-explorer"
-      aria-labelledby="performance-explorer-title"
-    >
+      <section
+        class="performance-explorer"
+        id="performance-explorer"
+        aria-labelledby="performance-explorer-title"
+      >
       <div class="performance-explorer__header">
         <p class="label">Popularity patterns</p>
         <h2 id="performance-explorer-title">What makes a track perform?</h2>
@@ -246,12 +249,12 @@
           <div class="performance-note__stats" id="performance-note-stats"></div>
         </aside>
       </div>
-    </section>
-    <section
-      class="artist-journey"
-      id="artist-journey"
-      aria-labelledby="artist-journey-title"
-    >
+      </section>
+      <section
+        class="artist-journey"
+        id="artist-journey"
+        aria-labelledby="artist-journey-title"
+      >
       <div class="artist-journey__header">
         <p class="label">Artist journeys</p>
         <h2 id="artist-journey-title">How do artists evolve over time?</h2>
@@ -261,7 +264,7 @@
         </p>
       </div>
 
-      <!-- Beat 1: pick an artist -->
+      <div class="artist-journey__body">
       <div class="journey-pick-panel" id="journey-pick-panel">
         <p class="journey-pick-prompt">Choose an artist to follow</p>
         <div class="artist-picker" id="artist-picker" role="group" aria-label="Select artist"></div>
@@ -270,9 +273,13 @@
         </button>
       </div>
 
-      <!-- Beats 2–5: story -->
       <div class="journey-story" id="journey-story" hidden>
-        <div class="journey-progress" id="journey-progress" aria-label="Story progress"></div>
+        <div class="journey-story__toolbar">
+          <button type="button" class="btn-journey-reset" id="btn-journey-reset">
+            Reset journey
+          </button>
+        </div>
+        <div class="journey-progress" id="journey-progress" aria-label="Story progress" hidden></div>
         <div class="artist-journey__layout">
           <div class="artist-journey__chart-panel">
             <div class="journey-chart-wrap">
@@ -289,7 +296,10 @@
           <aside class="journey-narrative" id="journey-narrative"></aside>
         </div>
       </div>
-    </section>
+      </div>
+      </section>
+      </div>
+    </div>
   </main>
 </body>
 </html>
