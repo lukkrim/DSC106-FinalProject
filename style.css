@@ -2303,8 +2303,7 @@ main {
   min-height: calc(100dvh - 2rem);
 }
 
-/* Guess / summary: shrink sticky stage and panel to content height */
-.story-stage:has(> .genre-guess.is-story-active),
+/* Summary only: shrink sticky stage to content height */
 .story-stage:has(> .game-summary.is-story-active) {
   height: auto;
   min-height: 0;
@@ -2331,7 +2330,11 @@ main {
   box-shadow: 0 28px 70px rgba(34, 32, 29, 0.14);
 }
 
-.story-stage > .genre-guess.is-story-active,
+.story-stage > .genre-guess.is-story-active {
+  justify-content: flex-start;
+  overflow-y: auto;
+}
+
 .story-stage > .game-summary.is-story-active {
   inset: 0 auto auto 0;
   right: 0;
@@ -2538,7 +2541,7 @@ main {
 .story-scroll .journey-story .artist-journey__layout {
   flex: 1;
   min-height: 0;
-  grid-template-columns: minmax(0, 1.9fr) minmax(10.5rem, 0.38fr);
+  grid-template-columns: minmax(0, 1.5fr) minmax(15rem, 0.5fr);
 }
 
 .story-scroll .journey-progress {

@@ -1186,7 +1186,8 @@ function buildSoundNarrative(artistId, corr) {
 function journeyChartSetup(svgEl) {
   const bounds = svgEl.getBoundingClientRect();
   const width = Math.max(340, Math.floor(bounds.width || 640));
-  const height = 300;
+  const wrapH = svgEl.parentElement?.clientHeight ?? 0;
+  const height = wrapH > 150 ? Math.floor(wrapH) : 300;
   const margin = { top: 20, right: 24, bottom: 44, left: 54 };
   const iW = width - margin.left - margin.right;
   const iH = height - margin.top - margin.bottom;
@@ -2147,8 +2148,12 @@ function initStoryScroll() {
 
   function scrollToChapter(targetIndex) {
     if (window.matchMedia('(max-width: 860px)').matches) return;
+    if (targetIndex < 0) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     const n = chapters.length;
-    const clamped = Math.max(0, Math.min(n - 1, targetIndex));
+    const clamped = Math.min(n - 1, targetIndex);
     const targetProgress = (clamped + 0.5) / n;
     const throughSpacers = targetProgress * spacerScrollDistance();
     const scrolledIntoStory = throughSpacers + storyStageScrollHeight();
