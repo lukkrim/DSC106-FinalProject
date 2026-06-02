@@ -1565,8 +1565,13 @@ main {
   gap: 0.5rem;
   position: sticky;
   bottom: 0;
-  background: rgba(243, 228, 212, 0.97);
-  padding-top: 0.5rem;
+  background: rgba(255, 253, 248, 0.82);
+  border: 1px solid var(--ring);
+  border-radius: 8px;
+  padding: 0.75rem;
+  box-shadow: 0 -6px 18px rgba(58, 47, 40, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .narrative-year-count {
@@ -1607,6 +1612,25 @@ main {
   transition: border-color 0.15s, color 0.15s;
 }
 
+.btn-journey-retry {
+  width: 100%;
+  padding: 0.52rem 1rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text);
+  background: rgba(255, 250, 246, 0.74);
+  border: 1px solid var(--ring);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.btn-journey-retry:hover {
+  background: #fffaf6;
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
 .journey-guess-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -1639,28 +1663,14 @@ main {
   border: none;
 }
 
-/* Custom artist search toggle — pill matching preset artist buttons */
-
-.artist-search-toggle {
-  padding: 0.6rem 1.1rem;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--muted);
-  background: rgba(255, 250, 246, 0.78);
-  border: 2px dashed var(--ring);
-  border-radius: 999px;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-
-.artist-search-toggle:hover,
-.artist-search-toggle.is-active {
-  color: var(--text);
-  border-color: var(--muted);
-  border-style: solid;
-}
-
 /* Custom artist search */
+
+.artist-custom-pick {
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .artist-search-wrap {
   display: flex;
@@ -2332,7 +2342,7 @@ main {
 
 .story-stage > .genre-guess.is-story-active {
   justify-content: flex-start;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .story-stage > .game-summary.is-story-active {
@@ -2351,6 +2361,146 @@ main {
 
 .story-scroll .genre-guess .section-note {
   flex-shrink: 0;
+}
+
+.story-scroll .genre-guess {
+  gap: 0;
+  padding-block: clamp(0.85rem, 2vw, 1.15rem);
+}
+
+.story-scroll .genre-guess h2 {
+  margin-bottom: 0.2rem;
+}
+
+.story-scroll .genre-guess__layout {
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.story-scroll .feature-card,
+.story-scroll .guess-panel {
+  padding: 0.95rem 1.05rem;
+}
+
+.story-scroll .feature-card__header {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.65rem;
+}
+
+.story-scroll .feature-card h3,
+.story-scroll .guess-panel__now-playing h3 {
+  font-size: 1.08rem;
+}
+
+.story-scroll .feature-bars {
+  gap: 0.55rem;
+}
+
+.story-scroll .feature-bar {
+  gap: 0.45rem 0.65rem;
+}
+
+.story-scroll .feature-summary {
+  margin-top: 0.7rem;
+  padding-top: 0.65rem;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.story-scroll .spotify-embed-wrap {
+  margin-bottom: 0.75rem;
+}
+
+.story-scroll .guess-panel__controls {
+  margin-bottom: 0.6rem;
+}
+
+.story-scroll .genre-buttons {
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+}
+
+.story-scroll .genre-btn {
+  padding: 0.42rem 0.68rem;
+  font-size: 0.82rem;
+}
+
+.story-scroll .progress-text {
+  margin-top: 0.45rem;
+}
+
+.story-scroll .genre-guess:has(.guess-panel__reveal:not([hidden])) .listening-guide {
+  display: none;
+}
+
+.story-scroll .listening-guide {
+  margin-top: 3rem;
+}
+
+.listening-guide {
+  margin-top: 0.45rem;
+  min-height: 10.25rem;
+  padding: 0.85rem 0.95rem;
+  background: rgba(255, 253, 248, 0.72);
+  border: 1px solid var(--ring);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.listening-guide__intro {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.55rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(216, 208, 197, 0.72);
+}
+
+.listening-guide__intro h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.9rem;
+  letter-spacing: 0;
+}
+
+.listening-guide__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.listening-cue {
+  min-width: 0;
+  min-height: 7rem;
+  padding: 0.72rem 0.72rem;
+  background: rgba(255, 250, 246, 0.62);
+  border: 1px solid rgba(216, 208, 197, 0.7);
+  border-radius: 8px;
+}
+
+.listening-cue__mark {
+  display: inline-flex;
+  margin-bottom: 0.28rem;
+  color: var(--accent);
+  font-size: 0.64rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+}
+
+.listening-cue h4 {
+  margin: 0 0 0.2rem;
+  color: var(--text);
+  font-size: 0.82rem;
+  letter-spacing: 0;
+}
+
+.listening-cue p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
 }
 
 /* Compact artist journey: content at top; stage stays full height (prevents scroll/layout glitch) */
@@ -2515,12 +2665,6 @@ main {
   font-size: 0.76rem;
 }
 
-.story-scroll .artist-search-toggle {
-  padding: 0.28rem 0.58rem;
-  font-size: 0.74rem;
-  border-width: 1px;
-}
-
 .story-scroll .artist-search-status {
   display: none;
 }
@@ -2552,6 +2696,12 @@ main {
 .story-scroll .journey-narrative {
   padding: 0.75rem;
   font-size: 0.85rem;
+}
+
+.story-scroll .narrative-footer {
+  gap: 0.45rem;
+  padding: 0.65rem;
+  border-radius: 8px;
 }
 
 .story-scroll .journey-narrative h3 {
@@ -2647,6 +2797,10 @@ main {
     display: none;
   }
 
+  .listening-guide__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .story-scroll__spacer {
     display: none;
   }
@@ -2655,5 +2809,13 @@ main {
 @media (max-width: 520px) {
   .site-header h1 {
     font-size: clamp(2rem, 12vw, 3rem);
+  }
+
+  .listening-guide__intro {
+    display: block;
+  }
+
+  .listening-guide__grid {
+    grid-template-columns: 1fr;
   }
 }

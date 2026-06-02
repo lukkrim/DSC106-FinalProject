@@ -1627,7 +1627,7 @@ function renderNarrativePanel(el, state, data, onAdvance, onSoundGuess) {
     if (soundGuess && soundFeature) {
       resultLine = correct
         ? `<p class="narrative-guess-result is-correct">✓ You got it — it was ${soundFeature.label.toLowerCase()}.</p>`
-        : `<p class="narrative-guess-result is-wrong">✗ You picked ${guessedFeat?.label ?? soundGuess} — it was actually ${soundFeature.label.toLowerCase()}.</p>`;
+        : `<p class="narrative-guess-result is-wrong">✗ You picked ${guessedFeat?.label ?? soundGuess}. Try another trait.</p>`;
     }
     el.innerHTML = `
       <p class="label">The reveal</p>
@@ -1636,6 +1636,7 @@ function renderNarrativePanel(el, state, data, onAdvance, onSoundGuess) {
       <p>${narrative}</p>
       ${soundFeature ? `<p class="narrative-meta">Dashed line = ${soundFeature.label.toLowerCase()}, scaled 0–100.</p>` : ''}
       <div class="narrative-footer">
+        ${soundGuess && soundFeature && !correct ? '<button type="button" class="btn-journey-retry" id="btn-journey-retry">Try another option</button>' : ''}
         <button type="button" class="btn-journey-next" id="btn-journey-next">Zoom out →</button>
       </div>
     `;
@@ -1684,6 +1685,7 @@ function renderNarrativePanel(el, state, data, onAdvance, onSoundGuess) {
 
   el.querySelector('#btn-journey-next')?.addEventListener('click', () => onAdvance('next'));
   el.querySelector('#btn-journey-skip')?.addEventListener('click', () => onAdvance('skip'));
+  el.querySelector('#btn-journey-retry')?.addEventListener('click', () => onAdvance('retry-sound'));
 }
 
 function setArtistJourneyChartOpen(open) {
@@ -1736,14 +1738,6 @@ function initArtistJourney(pool) {
   });
   pickerEl.querySelector('.artist-pick-btn').classList.add('is-active');
 
-  // "Other artists" toggle button — lives inside artist-picker, inline with presets
-  const searchToggleBtn = document.createElement('button');
-  searchToggleBtn.type = 'button';
-  searchToggleBtn.id = 'artist-search-toggle';
-  searchToggleBtn.className = 'artist-search-toggle';
-  searchToggleBtn.textContent = 'Other popular artists';
-  pickerEl.append(searchToggleBtn);
-
   // Custom artist search — artists with 5+ distinct years all from 2000 onwards
   const artistYearSets = {};
   pool.forEach((t) => {
@@ -1769,7 +1763,8 @@ function initArtistJourney(pool) {
   const searchInputEl = document.getElementById('artist-search-input');
   const searchResultsEl = document.getElementById('artist-search-results');
   const searchWrapEl = document.getElementById('artist-search-wrap');
-  // Move inline into artist-picker so it sits next to the toggle button
+  let customArtistBtn = null;
+  // Move inline into artist-picker so it sits beside the recommended artists.
   if (searchWrapEl) pickerEl.append(searchWrapEl);
 
   function setSearchStatus(msg, type) {
@@ -1785,30 +1780,51 @@ function initArtistJourney(pool) {
     el.className = `artist-search-status ${type ?? ''}`;
   }
 
-  const searchToggleEl = document.getElementById('artist-search-toggle');
-
   function closeSearchResults() {
     if (searchResultsEl) searchResultsEl.hidden = true;
   }
 
+  function removeCustomArtistButton() {
+    customArtistBtn?.remove();
+    customArtistBtn = null;
+  }
+
+  function showCustomArtistButton(artistId) {
+    if (!searchWrapEl) return;
+    if (!customArtistBtn) {
+      customArtistBtn = document.createElement('button');
+      customArtistBtn.type = 'button';
+      customArtistBtn.className = 'artist-pick-btn artist-custom-pick is-active';
+      customArtistBtn.addEventListener('click', () => {
+        state.artist = customArtistBtn.dataset.artist;
+        state.genre = inferArtistGenre(state.artist);
+        pickerEl.querySelectorAll('.artist-pick-btn').forEach((b) => {
+          b.classList.toggle('is-active', b === customArtistBtn);
+        });
+        if (searchInputEl) {
+          searchInputEl.value = state.artist;
+          searchInputEl.classList.add('is-selected');
+        }
+      });
+      pickerEl.insertBefore(customArtistBtn, searchWrapEl);
+    }
+    customArtistBtn.textContent = artistId;
+    customArtistBtn.dataset.artist = artistId;
+    customArtistBtn.style.setProperty('--artist-color', GENRE_COLORS[inferArtistGenre(artistId)] ?? GENRE_COLORS.pop);
+    pickerEl.querySelectorAll('.artist-pick-btn').forEach((b) => {
+      b.classList.toggle('is-active', b === customArtistBtn);
+    });
+  }
+
   function clearSearch() {
+    removeCustomArtistButton();
     if (searchInputEl) {
       searchInputEl.value = '';
       searchInputEl.classList.remove('is-selected');
     }
     closeSearchResults();
     setSearchStatus('');
-    searchToggleBtn.classList.remove('is-active');
-    if (searchWrapEl) searchWrapEl.hidden = true;
   }
-
-  searchToggleEl?.addEventListener('click', () => {
-    if (!searchWrapEl) return;
-    const opening = searchWrapEl.hidden;
-    searchWrapEl.hidden = !opening;
-    searchToggleBtn.classList.toggle('is-active', opening);
-    if (opening) searchInputEl?.focus();
-  });
 
   function selectCustomArtist(artistId) {
     if (!artistDataMap[artistId]) {
@@ -1825,6 +1841,7 @@ function initArtistJourney(pool) {
     state.artist = artistId;
     state.genre = inferArtistGenre(artistId);
     pickerEl.querySelectorAll('.artist-pick-btn').forEach((b) => b.classList.remove('is-active'));
+    showCustomArtistButton(artistId);
     if (searchInputEl) {
       searchInputEl.value = artistId;
       searchInputEl.classList.add('is-selected');
@@ -1857,7 +1874,7 @@ function initArtistJourney(pool) {
   searchInputEl?.addEventListener('input', () => {
     const q = searchInputEl.value.trim().toLowerCase();
     searchInputEl.classList.remove('is-selected');
-    if (q.length < 2) { closeSearchResults(); return; }
+    if (q.length < 1) { closeSearchResults(); return; }
     const matches = allArtistIds.filter((a) => a.toLowerCase().includes(q)).slice(0, 10);
     if (!matches.length) { closeSearchResults(); return; }
     showSearchResults(matches);
@@ -1929,7 +1946,6 @@ function initArtistJourney(pool) {
       b.classList.toggle('is-active', b.dataset.artist === defaultArtist.id);
     });
     clearSearch();
-    if (searchWrapEl) searchWrapEl.hidden = true;
     pickPanel.classList.remove('is-compact');
     storyPanel.hidden = true;
     setArtistJourneyChartOpen(false);
@@ -1978,7 +1994,12 @@ function initArtistJourney(pool) {
     } else if (state.beat === 'soundguess') {
       state.beat = 'sound';
     } else if (state.beat === 'sound') {
-      state.beat = 'compare';
+      if (action === 'retry-sound') {
+        state.soundGuess = null;
+        state.beat = 'soundguess';
+      } else {
+        state.beat = 'compare';
+      }
     } else if (state.beat === 'compare') {
       state.beat = 'genre';
     } else if (state.beat === 'genre') {

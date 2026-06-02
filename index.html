@@ -11,8 +11,8 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet"
   >
-  <link rel="stylesheet" href="style.css?v=25">
-  <script src="main.js?v=5" type="module"></script>
+  <link rel="stylesheet" href="style.css?v=35">
+  <script src="main.js?v=9" type="module"></script>
 </head>
 <body>
   <header class="site-header">
@@ -22,7 +22,7 @@
     <div class="site-header__content">
       <h1>What Does a Genre Sound Like?</h1>
       <p class="lede">
-        This is a project that explores the sound of different genres of music.
+        We will explore the sound of different genres of music.
       </p>
     </div>
   </header>
@@ -107,6 +107,35 @@
             <p class="progress-text" id="progress-text">Track 1 of 5</p>
           </div>
         </div>
+
+        <aside class="listening-guide" aria-labelledby="listening-guide-title">
+          <div class="listening-guide__intro">
+            <p class="label">Listening guide</p>
+            <h3 id="listening-guide-title">What to listen for</h3>
+          </div>
+          <div class="listening-guide__grid">
+            <article class="listening-cue">
+              <span class="listening-cue__mark" aria-hidden="true">01</span>
+              <h4>Rhythm</h4>
+              <p>Notice whether the beat feels danceable, relaxed, syncopated, or driven by rap flow.</p>
+            </article>
+            <article class="listening-cue">
+              <span class="listening-cue__mark" aria-hidden="true">02</span>
+              <h4>Energy</h4>
+              <p>Listen for intensity: bright synths, heavy drums, distorted guitars, or smoother production.</p>
+            </article>
+            <article class="listening-cue">
+              <span class="listening-cue__mark" aria-hidden="true">03</span>
+              <h4>Voice</h4>
+              <p>Pay attention to vocal hooks, rap verses, vocal chops, harmonies, or mostly instrumental moments.</p>
+            </article>
+            <article class="listening-cue">
+              <span class="listening-cue__mark" aria-hidden="true">04</span>
+              <h4>Texture</h4>
+              <p>Compare acoustic, electronic, polished, gritty, spacious, and club-like sounds before choosing.</p>
+            </article>
+          </div>
+        </aside>
       </section>
 
       <section
@@ -271,7 +300,7 @@
         <button type="button" class="btn-journey-start" id="btn-journey-start">
           Start their story →
         </button>
-        <div class="artist-search-wrap" id="artist-search-wrap" hidden>
+        <div class="artist-search-wrap" id="artist-search-wrap">
           <p class="artist-search-label">Artists with 5+ years in our data</p>
           <div class="artist-search-field">
             <input
