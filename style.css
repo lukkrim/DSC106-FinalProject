@@ -61,13 +61,17 @@ textarea {
 .site-header {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 0;
+  padding: 0.85rem 1.5rem;
+}
+
+.site-header__content {
+  display: none;
 }
 
 .site-nav {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0;
 }
 
 .site-nav a {
@@ -2297,64 +2301,64 @@ main {
   content: "↗";
 }
 
-/* --- Sticky story stack --- */
+/* --- Story sections: natural scroll flow --- */
 
 .story-scroll {
-  position: relative;
   margin-top: 0;
-  min-height: auto;
 }
-
 
 .story-stage {
-  position: sticky;
-  top: 1rem;
-  height: calc(100dvh - 2rem);
-  min-height: calc(100dvh - 2rem);
+  display: flex;
+  flex-direction: column;
 }
 
-/* Summary only: shrink sticky stage to content height */
-.story-stage:has(> .game-summary.is-story-active) {
-  height: auto;
-  min-height: 0;
+.story-stage > .story-hook,
+.story-stage > .story-finale {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  box-sizing: border-box;
+  text-align: center;
 }
 
-.story-stage > .story-transition,
-.story-stage > .story-takeaway,
 .story-stage > .genre-guess,
-.story-stage > .game-summary,
 .story-stage > .genre-explorer,
 .story-stage > .performance-explorer,
 .story-stage > .artist-journey {
-  position: absolute;
-  inset: 0;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  margin-top: 0;
-  margin-bottom: 0;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
-  visibility: hidden;
-  box-shadow: 0 28px 70px rgba(34, 32, 29, 0.14);
+  padding: 1.5rem 2rem;
+  box-sizing: border-box;
 }
 
-.story-stage > .genre-guess.is-story-active {
-  justify-content: flex-start;
-  overflow: hidden;
+.story-stage > .story-takeaway {
+  display: flex;
+  flex-direction: column;
+  padding: 4rem 2rem;
+  box-sizing: border-box;
 }
 
-.story-stage > .game-summary.is-story-active {
-  inset: 0 auto auto 0;
-  right: 0;
-  bottom: auto;
-  height: auto;
-  max-height: calc(100dvh - 2rem);
-  justify-content: flex-start;
-  overflow-y: auto;
+.story-stage > .story-transition {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5rem 2rem;
+  box-sizing: border-box;
+}
+
+.story-stage > .game-summary {
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+.story-stage > .game-summary[hidden] {
+  display: none;
 }
 
 .story-scroll .genre-guess__layout {
@@ -2505,41 +2509,6 @@ main {
   line-height: 1.35;
 }
 
-/* Compact artist journey: content at top; stage stays full height (prevents scroll/layout glitch) */
-.story-stage > .artist-journey.is-story-active:not(.is-journey-chart-open) {
-  justify-content: flex-start;
-}
-
-.story-stage > .story-transition[hidden],
-.story-stage > .story-takeaway[hidden],
-.story-stage > .genre-guess[hidden],
-.story-stage > .genre-explorer[hidden],
-.story-stage > .performance-explorer[hidden],
-.story-stage > .artist-journey[hidden],
-.story-stage > .game-summary[hidden] {
-  display: none;
-}
-
-.story-stage > .story-transition.is-story-active,
-.story-stage > .story-takeaway.is-story-active {
-  overflow-y: auto;
-  align-items: center;
-  justify-content: center;
-}
-
-.story-stage > .is-story-active {
-  opacity: 1;
-  pointer-events: auto;
-  visibility: visible;
-}
-
-.story-scroll .genre-explorer__chart-panel,
-.story-scroll .performance-chart-panel,
-.story-scroll .artist-journey__chart-panel {
-  position: static;
-}
-
-/* Fit each chapter inside the viewport — page scroll only, no in-section scroll */
 .story-scroll .genre-explorer__header,
 .story-scroll .performance-explorer__header,
 .story-scroll .artist-journey__header {
@@ -2557,22 +2526,8 @@ main {
 .story-scroll .performance-explorer__layout,
 .story-scroll .artist-journey__layout {
   flex: 1;
-  min-height: 0;
+  min-height: 420px;
   align-items: stretch;
-}
-
-.story-scroll .genre-explorer__chart-panel,
-.story-scroll .performance-chart-panel,
-.story-scroll .artist-journey__chart-panel,
-.story-scroll .genre-profile,
-.story-scroll .performance-note {
-  min-height: 0;
-  overflow: hidden;
-}
-
-.story-scroll .journey-narrative {
-  min-height: 0;
-  overflow-y: auto;
 }
 
 .story-scroll .genre-explorer__chart-panel,
@@ -2580,12 +2535,24 @@ main {
 .story-scroll .artist-journey__chart-panel {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+}
+
+.story-scroll .genre-profile,
+.story-scroll .performance-note {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.story-scroll .journey-narrative {
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .story-scroll .explorer-chart-wrap,
 .story-scroll .performance-chart-wrap,
 .story-scroll .journey-chart-wrap {
-  flex: 1 1 auto;
+  flex: 1 1 300px;
   min-height: 0;
 }
 
@@ -2594,8 +2561,7 @@ main {
 .story-scroll .journey-chart {
   display: block;
   width: 100%;
-  max-height: 100%;
-  height: auto;
+  height: 100%;
 }
 
 .story-scroll .explorer-help,
@@ -2733,27 +2699,6 @@ main {
 
 /* Arrow-key nav hint */
 
-.arrow-nav-hint {
-  position: fixed;
-  bottom: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(58, 47, 40, 0.82);
-  color: #fffaf6;
-  font-size: 0.78rem;
-  font-weight: 600;
-  padding: 0.45rem 1.1rem;
-  border-radius: 999px;
-  pointer-events: none;
-  white-space: nowrap;
-  z-index: 200;
-  opacity: 1;
-  transition: opacity 0.5s ease;
-}
-
-.arrow-nav-hint.is-hidden {
-  opacity: 0;
-}
 
 /* Minimize header + picker while journey is in progress */
 
@@ -2772,11 +2717,19 @@ main {
 
 /* Story transitions */
 
-.story-transition__inner,
-.story-takeaway__inner {
+.story-transition__inner {
   max-width: 44rem;
   width: 100%;
   padding: 0.5rem 0;
+}
+
+.story-takeaway__inner {
+  width: 100%;
+  padding: 1.75rem 2rem;
+  background: rgba(255, 250, 246, 0.82);
+  border: 1px solid var(--ring);
+  border-radius: 16px;
+  box-sizing: border-box;
 }
 
 .story-transition h2,
@@ -2795,58 +2748,70 @@ main {
   max-width: 38rem;
 }
 
-/* Genre comparison bars */
+/* Genre dot strip plot */
 
 .story-transition__feature-group {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 0;
 }
 
-.transition-feature-label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--muted);
-  margin: 0 0 0.55rem;
-}
-
-.transition-bar-rows {
+.transition-dot-legend {
   display: flex;
-  flex-direction: column;
-  gap: 0.38rem;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.9rem;
+  margin-bottom: 0.85rem;
 }
 
-.transition-bar-row {
-  display: grid;
-  grid-template-columns: 4.5rem 1fr 2.5rem;
+.transition-dot-legend-item {
+  display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.32rem;
+  font-size: 0.77rem;
+  font-weight: 600;
+  color: var(--text);
 }
 
-.transition-bar-genre {
-  font-size: 0.78rem;
+.transition-dot-svg {
+  width: 100%;
+  max-width: 34rem;
+  overflow: visible;
+  display: block;
+}
+
+.transition-dot-track {
+  stroke: var(--ring);
+  stroke-width: 2;
+}
+
+.transition-dot-tick {
+  stroke: var(--muted);
+  stroke-width: 1;
+  opacity: 0.45;
+}
+
+.transition-dot-feat-label {
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.transition-dot-scale-label {
+  font-size: 9px;
+  fill: var(--muted);
+  opacity: 0.65;
+}
+
+.transition-dot-genre-label {
+  font-size: 9px;
   font-weight: 700;
 }
 
-.transition-bar-track {
-  height: 6px;
-  border-radius: 999px;
-  background: var(--ring);
-  overflow: hidden;
-}
-
-.transition-bar-fill {
-  height: 100%;
-  border-radius: 999px;
-}
-
-.transition-bar-value {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--muted);
-  text-align: right;
+.transition-lollipop-genre {
+  font-size: 10.5px;
+  font-weight: 700;
 }
 
 /* Stat cards */
@@ -2881,16 +2846,178 @@ main {
   margin: 0;
 }
 
-/* Takeaway section */
+/* Takeaway / Timeline section */
 
-.story-takeaway__points {
+.timeline-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1.1rem;
+}
+
+.timeline-selector-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.timeline-selector-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--muted);
+  min-width: 3.2rem;
+  flex-shrink: 0;
+}
+
+.timeline-chip {
+  padding: 0.25rem 0.65rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  border: 1.5px solid var(--ring);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  font-family: inherit;
+}
+
+.timeline-chip:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text);
+}
+
+.timeline-chip.is-active {
+  background: var(--text);
+  border-color: var(--text);
+  color: #fffaf6;
+}
+
+.timeline-chip.has-color.is-active {
+  background: var(--chip-color);
+  border-color: var(--chip-color);
+  color: #fff;
+}
+
+.timeline-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  margin-bottom: 0.85rem;
+}
+
+.timeline-square {
+  aspect-ratio: 1;
+  border-radius: 7px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 5px;
+  transition: background 0.35s ease;
+}
+
+.timeline-square.is-empty {
+  opacity: 0.35;
+}
+
+.timeline-year-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.4);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.timeline-legend-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.5rem;
+}
+
+.timeline-legend-bar {
+  height: 7px;
+  flex: 1;
+  border-radius: 999px;
+  transition: background 0.35s ease;
+}
+
+.timeline-legend-end {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.story-takeaway__credit {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 1.5rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--ring);
+}
+
+/* Hook intro */
+
+.story-hook__inner {
+  max-width: 36rem;
+}
+
+.story-hook__headline {
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 800;
+  line-height: 1.12;
+  margin: 0.5rem 0 1.2rem;
+  letter-spacing: -0.02em;
+}
+
+.story-hook__sub {
+  font-size: 1rem;
+  color: var(--muted);
+  line-height: 1.65;
+  max-width: 30rem;
+  margin: 0 auto 2rem;
+}
+
+.story-hook__cta {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  margin: 0;
+  animation: hook-bounce 2s ease-in-out infinite;
+}
+
+@keyframes hook-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+
+/* Final takeaway */
+
+.story-finale__inner {
+  max-width: 36rem;
+  width: 100%;
+  text-align: left;
+}
+
+.story-finale__inner h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0.3rem 0 1.5rem;
+}
+
+.story-finale__points {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  margin-top: 0.5rem;
 }
 
-.story-takeaway__point {
+.story-finale__point {
   display: flex;
   gap: 1.1rem;
   align-items: flex-start;
@@ -2900,7 +3027,7 @@ main {
   border-radius: 12px;
 }
 
-.story-takeaway__num {
+.story-finale__num {
   font-size: 0.7rem;
   font-weight: 800;
   color: var(--accent);
@@ -2910,25 +3037,26 @@ main {
   min-width: 1.8rem;
 }
 
-.story-takeaway__point h3 {
+.story-finale__point h3 {
   margin: 0 0 0.25rem;
   font-size: 0.97rem;
   font-weight: 700;
 }
 
-.story-takeaway__point p {
+.story-finale__point p {
   margin: 0;
   font-size: 0.86rem;
   color: var(--muted);
   line-height: 1.6;
 }
 
-.story-takeaway__credit {
+.story-finale__credit {
   font-size: 0.7rem;
   color: var(--muted);
   margin-top: 1.5rem;
   padding-top: 0.85rem;
   border-top: 1px solid var(--ring);
+  text-align: left;
 }
 
 @media (max-width: 860px) {

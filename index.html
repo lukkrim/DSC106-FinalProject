@@ -11,8 +11,8 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet"
   >
-  <link rel="stylesheet" href="style.css?v=35">
-  <script src="main.js?v=9" type="module"></script>
+  <link rel="stylesheet" href="style.css?v=43">
+  <script src="main.js?v=15" type="module"></script>
 </head>
 <body>
   <header class="site-header">
@@ -30,6 +30,15 @@
   <main>
     <div class="story-scroll" aria-label="Interactive visualization story">
       <div class="story-stage">
+      <section class="story-hook" id="story-hook" aria-label="Introduction">
+        <div class="story-hook__inner">
+          <p class="label">An interactive story</p>
+          <h2 class="story-hook__headline">We think we know genre.<br>The data has an opinion.</h2>
+          <p class="story-hook__sub">Six genres. ~33,000 songs. Eight audio traits measured by Spotify. Can you actually hear the difference — or are you just guessing?</p>
+          <p class="story-hook__cta" aria-hidden="true">↓ Scroll to find out</p>
+        </div>
+      </section>
+
       <section id="genre-guess" class="genre-guess" aria-labelledby="genre-guess-title">
         <h2 id="genre-guess-title">Guess the genre</h2>
         <p class="section-note">
@@ -154,6 +163,15 @@
         </button>
       </section>
 
+      <section class="story-transition" id="transition-explore" aria-labelledby="transition-explore-h">
+        <div class="story-transition__inner">
+          <p class="label">Behind the music</p>
+          <h2 id="transition-explore-h">You felt the genre. Now see the data.</h2>
+          <p class="story-transition__lede">Every track in our dataset was measured across eight audio traits. Genres cluster into distinct sonic profiles — and the differences are bigger than you might expect.</p>
+          <div class="story-transition__feature-group" id="transition-explore-bars"></div>
+        </div>
+      </section>
+
       <section
         class="genre-explorer"
         id="genre-explorer"
@@ -212,6 +230,15 @@
           <p class="genre-profile__note" id="genre-profile-note"></p>
         </aside>
       </div>
+      </section>
+
+      <section class="story-transition" id="transition-perform" aria-labelledby="transition-perform-h">
+        <div class="story-transition__inner">
+          <p class="label">The harder question</p>
+          <h2 id="transition-perform-h">Does sounding like a genre make a song popular?</h2>
+          <p class="story-transition__lede">You've seen what makes genres distinct. But does having the right audio fingerprint actually drive streaming success? The answer might surprise you.</p>
+          <div class="story-transition__stats" id="transition-perform-stats"></div>
+        </div>
       </section>
 
       <section
@@ -279,6 +306,16 @@
         </aside>
       </div>
       </section>
+
+      <section class="story-transition" id="transition-journey" aria-labelledby="transition-journey-h">
+        <div class="story-transition__inner">
+          <p class="label">Zooming in</p>
+          <h2 id="transition-journey-h">Genre trends are made by people.</h2>
+          <p class="story-transition__lede">Genre averages reveal patterns — but they're the sum of thousands of individual artistic choices. Let's follow a specific artist across their entire career, year by year, and see how their sound and popularity evolved together.</p>
+          <div class="story-transition__stats" id="transition-journey-stats"></div>
+        </div>
+      </section>
+
       <section
         class="artist-journey"
         id="artist-journey"
@@ -355,69 +392,64 @@
       </div>
       </section>
 
-      <section class="story-transition" id="transition-explore" aria-labelledby="transition-explore-h" hidden>
+      <section class="story-transition" id="transition-timeline" aria-labelledby="transition-timeline-h">
         <div class="story-transition__inner">
-          <p class="label">Behind the music</p>
-          <h2 id="transition-explore-h">You felt the genre. Now see the data.</h2>
-          <p class="story-transition__lede">Every track in our dataset was measured across eight audio traits. Genres cluster into distinct sonic profiles — and the differences are bigger than you might expect.</p>
-          <div class="story-transition__feature-group" id="transition-explore-bars"></div>
+          <p class="label">Stepping back</p>
+          <h2 id="transition-timeline-h">Every artist is part of a bigger wave.</h2>
+          <p class="story-transition__lede">You've seen how one artist's sound shifts year by year. Now zoom out: what happened to entire genres over two decades? The patterns are slower — but just as real.</p>
+          <div class="story-transition__stats" id="transition-timeline-stats"></div>
         </div>
       </section>
 
-      <section class="story-transition" id="transition-perform" aria-labelledby="transition-perform-h" hidden>
-        <div class="story-transition__inner">
-          <p class="label">The harder question</p>
-          <h2 id="transition-perform-h">Does sounding like a genre make a song popular?</h2>
-          <p class="story-transition__lede">You've seen what makes genres distinct. But does having the right audio fingerprint actually drive streaming success? The answer might surprise you.</p>
-          <div class="story-transition__stats" id="transition-perform-stats"></div>
-        </div>
-      </section>
-
-      <section class="story-transition" id="transition-journey" aria-labelledby="transition-journey-h" hidden>
-        <div class="story-transition__inner">
-          <p class="label">Zooming in</p>
-          <h2 id="transition-journey-h">Genre trends are made by people.</h2>
-          <p class="story-transition__lede">Genre averages reveal patterns — but they're the sum of thousands of individual artistic choices. Let's follow a specific artist across their entire career, year by year, and see how their sound and popularity evolved together.</p>
-          <div class="story-transition__stats" id="transition-journey-stats"></div>
-        </div>
-      </section>
-
-      <section class="story-takeaway" id="story-takeaway" aria-labelledby="story-takeaway-h" hidden>
+      <section class="story-takeaway" id="story-takeaway" aria-labelledby="story-takeaway-h">
         <div class="story-takeaway__inner">
           <p class="label">The big picture</p>
-          <h2 id="story-takeaway-h">What the data tells us about genre</h2>
-          <div class="story-takeaway__points">
-            <div class="story-takeaway__point">
-              <span class="story-takeaway__num">01</span>
+          <h2 id="story-takeaway-h">How has music changed since 2000?</h2>
+          <p class="story-transition__lede">Pick a trait and a genre to watch the average shift year by year.</p>
+          <div class="timeline-controls" id="timeline-controls"></div>
+          <div class="timeline-grid" id="timeline-grid"></div>
+          <div class="timeline-legend-wrap">
+            <span class="timeline-legend-end">Low</span>
+            <div class="timeline-legend-bar" id="timeline-legend-bar"></div>
+            <span class="timeline-legend-end">High</span>
+          </div>
+          <p class="story-takeaway__credit">Spotify playlist dataset · ~33,000 tracks · collected ~2020</p>
+        </div>
+      </section>
+
+      <section class="story-finale" id="story-finale" aria-labelledby="story-finale-h">
+        <div class="story-finale__inner">
+          <p class="label">What we learned</p>
+          <h2 id="story-finale-h">Three things the data taught us</h2>
+          <div class="story-finale__points">
+            <div class="story-finale__point">
+              <span class="story-finale__num">01</span>
               <div>
-                <h3>Genre has a measurable sound</h3>
-                <p>Each genre has consistent audio traits — danceability, energy, acousticness — that distinguish it from the others. Your ears already knew it; the data confirms it.</p>
+                <h3>Genre has a real sound</h3>
+                <p>Each genre clusters around distinct audio traits — speechiness, energy, acousticness. Your ears weren't wrong; the data agrees.</p>
               </div>
             </div>
-            <div class="story-takeaway__point">
-              <span class="story-takeaway__num">02</span>
+            <div class="story-finale__point">
+              <span class="story-finale__num">02</span>
               <div>
-                <h3>Sound alone doesn't predict popularity</h3>
-                <p>The relationship between audio traits and streaming performance is weaker than you might expect. Timing, artist fame, and catalog effects matter more than any single audio feature.</p>
+                <h3>Sound alone doesn't make a hit</h3>
+                <p>Audio traits explain surprisingly little of a song's popularity. Timing, artist recognition, and cultural moment matter far more than any fingerprint.</p>
               </div>
             </div>
-            <div class="story-takeaway__point">
-              <span class="story-takeaway__num">03</span>
+            <div class="story-finale__point">
+              <span class="story-finale__num">03</span>
               <div>
-                <h3>Artists shape — and are shaped by — their genre</h3>
-                <p>Every artist both reflects and pushes against genre norms over time. The most successful often led the trend rather than followed it.</p>
+                <h3>Music shifts slowly — then all at once</h3>
+                <p>Year by year, genres drift. Some traits converge across the whole landscape. Others diverge sharply. The changes are subtle until suddenly they aren't.</p>
               </div>
             </div>
           </div>
-          <p class="story-takeaway__credit">Spotify playlist dataset · ~33,000 tracks · collected ~2020</p>
+          <p class="story-finale__credit">Made with the Spotify playlist dataset · ~33,000 tracks · DSC 106</p>
         </div>
       </section>
       </div>
     </div>
   </main>
 
-  <div class="arrow-nav-hint" id="arrow-nav-hint" aria-hidden="true">
-    ↑ ↓ arrow keys to navigate sections
-  </div>
 </body>
 </html>

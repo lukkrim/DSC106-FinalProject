@@ -2032,6 +2032,154 @@ function initArtistJourney(pool) {
   resizeObserver.observe(svgEl);
 }
 
+function initTimeline(pool) {
+  const gridEl = document.getElementById('timeline-grid');
+  const controlsEl = document.getElementById('timeline-controls');
+  const legendBarEl = document.getElementById('timeline-legend-bar');
+  if (!gridEl || !controlsEl) return;
+
+  const features = [
+    { key: 'danceability', label: 'Danceability' },
+    { key: 'energy', label: 'Energy' },
+    { key: 'acousticness', label: 'Acousticness' },
+    { key: 'valence', label: 'Mood' },
+    { key: 'speechiness', label: 'Speechiness' },
+  ];
+
+  const years = [];
+  for (let y = 2000; y <= 2020; y++) years.push(y);
+
+  // Pre-compute year × genre × feature averages
+  const yearGenreData = {};
+  years.forEach((year) => {
+    const forYear = pool.filter((t) => +t.track_album_release_date?.slice(0, 4) === year);
+    yearGenreData[year] = {};
+    const allFdata = {};
+    features.forEach((f) => {
+      const valid = forYear.filter((t) => Number.isFinite(t[f.key]));
+      allFdata[f.key] = valid.length ? d3.mean(valid, (t) => t[f.key]) : null;
+    });
+    yearGenreData[year].all = allFdata;
+    GENRES.forEach(({ id }) => {
+      const tracks = forYear.filter((t) => t.playlist_genre === id);
+      const gdata = {};
+      features.forEach((f) => {
+        const valid = tracks.filter((t) => Number.isFinite(t[f.key]));
+        gdata[f.key] = valid.length ? d3.mean(valid, (t) => t[f.key]) : null;
+      });
+      yearGenreData[year][id] = gdata;
+    });
+  });
+
+  let activeFeature = 'danceability';
+  let activeGenre = 'all';
+
+  // Feature selector
+  const featRow = document.createElement('div');
+  featRow.className = 'timeline-selector-row';
+  const featLbl = document.createElement('span');
+  featLbl.className = 'timeline-selector-label';
+  featLbl.textContent = 'Trait';
+  featRow.append(featLbl);
+  features.forEach((f) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'timeline-chip';
+    if (f.key === activeFeature) btn.classList.add('is-active');
+    btn.textContent = f.label;
+    btn.dataset.key = f.key;
+    btn.addEventListener('click', () => {
+      activeFeature = f.key;
+      featRow.querySelectorAll('.timeline-chip').forEach((b) =>
+        b.classList.toggle('is-active', b.dataset.key === activeFeature),
+      );
+      render();
+    });
+    featRow.append(btn);
+  });
+
+  // Genre selector
+  const genreRow = document.createElement('div');
+  genreRow.className = 'timeline-selector-row';
+  const genreLbl = document.createElement('span');
+  genreLbl.className = 'timeline-selector-label';
+  genreLbl.textContent = 'Genre';
+  genreRow.append(genreLbl);
+  [{ id: 'all', label: 'All genres' }, ...GENRES].forEach(({ id, label }) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'timeline-chip';
+    if (id === activeGenre) btn.classList.add('is-active');
+    btn.textContent = label;
+    btn.dataset.key = id;
+    if (id !== 'all') {
+      btn.classList.add('has-color');
+      btn.style.setProperty('--chip-color', GENRE_COLORS[id] ?? '#c67b5c');
+    }
+    btn.addEventListener('click', () => {
+      activeGenre = id;
+      genreRow.querySelectorAll('.timeline-chip').forEach((b) =>
+        b.classList.toggle('is-active', b.dataset.key === activeGenre),
+      );
+      render();
+    });
+    genreRow.append(btn);
+  });
+
+  controlsEl.append(featRow, genreRow);
+
+  // Build year squares
+  const squares = years.map((year) => {
+    const sq = document.createElement('div');
+    sq.className = 'timeline-square';
+    const lbl = document.createElement('span');
+    lbl.className = 'timeline-year-label';
+    lbl.textContent = year;
+    sq.append(lbl);
+    gridEl.append(sq);
+    return { el: sq, year };
+  });
+
+  function hexToRgb(hex) {
+    return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+  }
+
+  function lerpColor(from, to, t) {
+    return `rgb(${Math.round(from[0] + (to[0] - from[0]) * t)},${Math.round(from[1] + (to[1] - from[1]) * t)},${Math.round(from[2] + (to[2] - from[2]) * t)})`;
+  }
+
+  function render() {
+    const vals = years.map((year) => yearGenreData[year]?.[activeGenre]?.[activeFeature] ?? null);
+    const valid = vals.filter((v) => v !== null);
+    const minV = valid.length ? Math.min(...valid) : 0;
+    const maxV = valid.length ? Math.max(...valid) : 1;
+    const spread = maxV > minV ? maxV - minV : 1;
+
+    const accentHex = activeGenre === 'all' ? '#c67b5c' : (GENRE_COLORS[activeGenre] ?? '#c67b5c');
+    const fromRgb = [246, 237, 226];
+    const toRgb = hexToRgb(accentHex);
+
+    squares.forEach(({ el }, i) => {
+      const val = vals[i];
+      if (val === null) {
+        el.style.background = 'rgba(180,170,160,0.18)';
+        el.classList.add('is-empty');
+      } else {
+        const t = (val - minV) / spread;
+        el.style.background = lerpColor(fromRgb, toRgb, t);
+        el.classList.remove('is-empty');
+      }
+    });
+
+    if (legendBarEl) {
+      legendBarEl.style.background =
+        `linear-gradient(to right, ${lerpColor(fromRgb, toRgb, 0)}, ${lerpColor(fromRgb, toRgb, 1)})`;
+    }
+  }
+
+  render();
+}
+
 function initTransitions(pool) {
   // Compute per-genre averages
   const genreAvgs = {};
@@ -2041,43 +2189,123 @@ function initTransitions(pool) {
       danceability: d3.mean(tracks, (t) => t.danceability) ?? 0,
       energy: d3.mean(tracks, (t) => t.energy) ?? 0,
       acousticness: d3.mean(tracks, (t) => t.acousticness) ?? 0,
+      valence: d3.mean(tracks, (t) => t.valence) ?? 0,
+      speechiness: d3.mean(tracks, (t) => t.speechiness) ?? 0,
       popularity: d3.mean(tracks, (t) => t.track_popularity) ?? 0,
     };
   });
 
-  // Transition 1 — genre danceability bar chart
+  // Transition 1 — lollipop chart, auto-selecting the 3 most distinct features
   const barsEl = document.getElementById('transition-explore-bars');
   if (barsEl) {
-    const features = [
-      { key: 'danceability', label: 'Danceability' },
+    const candidates = [
+      { key: 'speechiness', label: 'Speechiness' },
       { key: 'acousticness', label: 'Acousticness' },
+      { key: 'energy', label: 'Energy' },
+      { key: 'danceability', label: 'Danceability' },
+      { key: 'valence', label: 'Mood' },
     ];
-    features.forEach(({ key, label }) => {
-      const sorted = [...GENRES].sort(
-        (a, b) => (genreAvgs[b.id]?.[key] ?? 0) - (genreAvgs[a.id]?.[key] ?? 0),
-      );
-      const groupEl = document.createElement('div');
-      const labelEl = document.createElement('p');
-      labelEl.className = 'transition-feature-label';
-      labelEl.textContent = label;
-      const rowsEl = document.createElement('div');
-      rowsEl.className = 'transition-bar-rows';
-      sorted.forEach(({ id, label: gLabel }) => {
-        const val = genreAvgs[id]?.[key] ?? 0;
-        const pct = Math.round(val * 100);
-        const color = GENRE_COLORS[id] ?? '#c67b5c';
-        const row = document.createElement('div');
-        row.className = 'transition-bar-row';
-        row.innerHTML = `
-          <span class="transition-bar-genre" style="color:${color}">${gLabel}</span>
-          <div class="transition-bar-track"><div class="transition-bar-fill" style="width:${pct}%;background:${color}"></div></div>
-          <span class="transition-bar-value">${pct}%</span>
-        `;
-        rowsEl.append(row);
+
+    const topFeatures = [...candidates]
+      .map((f) => {
+        const vals = GENRES.map((g) => genreAvgs[g.id]?.[f.key] ?? 0);
+        return { ...f, range: Math.max(...vals) - Math.min(...vals) };
+      })
+      .sort((a, b) => b.range - a.range)
+      .slice(0, 3);
+
+    // SVG lollipop chart — one row per genre per feature
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const W = 480;
+    const padL = 108, padR = 48, padT = 6;
+    const rowH = 19;
+    const headerH = 22;
+    const axisH = 16;
+    const groupGap = 12;
+    const groupH = headerH + GENRES.length * rowH + axisH + groupGap;
+    const H = padT + topFeatures.length * groupH - groupGap;
+
+    function mkSvg(tag, attrs) {
+      const el = document.createElementNS(SVG_NS, tag);
+      Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, String(v)));
+      return el;
+    }
+
+    const svgEl = mkSvg('svg', { viewBox: `0 0 ${W} ${H}`, class: 'transition-dot-svg' });
+    const xPx = (val) => padL + val * (W - padL - padR);
+
+    topFeatures.forEach(({ key, label }, fi) => {
+      const groupY = padT + fi * groupH;
+      const groupEl = mkSvg('g', {});
+
+      // Feature label
+      const featLbl = mkSvg('text', {
+        x: padL, y: groupY + headerH - 5,
+        class: 'transition-dot-feat-label',
       });
-      groupEl.append(labelEl, rowsEl);
-      barsEl.append(groupEl);
+      featLbl.textContent = label;
+      groupEl.append(featLbl);
+
+      // Axis baseline
+      const axisY = groupY + headerH + GENRES.length * rowH;
+      groupEl.append(mkSvg('line', {
+        x1: padL, x2: W - padR, y1: axisY, y2: axisY,
+        class: 'transition-dot-track',
+      }));
+
+      // Axis labels
+      const tLow = mkSvg('text', { x: padL, y: axisY + 12, 'text-anchor': 'middle', class: 'transition-dot-scale-label' });
+      tLow.textContent = '0%';
+      groupEl.append(tLow);
+      const tHigh = mkSvg('text', { x: W - padR, y: axisY + 12, 'text-anchor': 'middle', class: 'transition-dot-scale-label' });
+      tHigh.textContent = '100%';
+      groupEl.append(tHigh);
+
+      // Sort genres descending by value
+      const pts = [...GENRES]
+        .map(({ id, label: gLabel }) => ({
+          id, label: gLabel,
+          val: genreAvgs[id]?.[key] ?? 0,
+          color: GENRE_COLORS[id] ?? '#c67b5c',
+        }))
+        .sort((a, b) => b.val - a.val);
+
+      pts.forEach(({ val, color, label: gLabel }, i) => {
+        const cx = xPx(val);
+        const cy = groupY + headerH + i * rowH + rowH / 2;
+
+        // Genre name label
+        const gLbl = mkSvg('text', {
+          x: padL - 8, y: cy, 'text-anchor': 'end', 'dominant-baseline': 'middle',
+          class: 'transition-lollipop-genre', fill: color,
+        });
+        gLbl.textContent = gLabel;
+        groupEl.append(gLbl);
+
+        // Dashed stem from axis (padL) to dot
+        groupEl.append(mkSvg('line', {
+          x1: padL, x2: cx, y1: cy, y2: cy,
+          stroke: color, 'stroke-width': 1.5, 'stroke-dasharray': '3 2', opacity: 0.5,
+        }));
+
+        // Dot
+        groupEl.append(mkSvg('circle', {
+          cx, cy, r: 5.5, fill: color, stroke: '#fffaf6', 'stroke-width': 1.5,
+        }));
+
+        // Value label right side
+        const valLbl = mkSvg('text', {
+          x: W - padR + 6, y: cy, 'dominant-baseline': 'middle',
+          class: 'transition-dot-scale-label',
+        });
+        valLbl.textContent = `${Math.round(val * 100)}%`;
+        groupEl.append(valLbl);
+      });
+
+      svgEl.append(groupEl);
     });
+
+    barsEl.append(svgEl);
   }
 
   // Transition 2 — performance stat cards
@@ -2135,13 +2363,47 @@ function initTransitions(pool) {
       journeyStatsEl.append(el);
     });
   }
+
+  // Transition 4 — bridge to the year timeline
+  const timelineStatsEl = document.getElementById('transition-timeline-stats');
+  if (timelineStatsEl) {
+    const yearTracks = pool.filter((t) => {
+      const y = +t.track_album_release_date?.slice(0, 4);
+      return y >= 2000 && y <= 2020;
+    });
+    const yearsPresent = new Set(yearTracks.map((t) => +t.track_album_release_date.slice(0, 4))).size;
+
+    // Feature with the biggest swing from 2000 to 2020
+    const candidates = ['danceability', 'energy', 'acousticness', 'valence', 'speechiness'];
+    let biggestFeature = 'danceability', biggestSwing = 0;
+    candidates.forEach((key) => {
+      const early = d3.mean(pool.filter((t) => +t.track_album_release_date?.slice(0, 4) === 2000 && Number.isFinite(t[key])), (t) => t[key]);
+      const late  = d3.mean(pool.filter((t) => +t.track_album_release_date?.slice(0, 4) === 2020 && Number.isFinite(t[key])), (t) => t[key]);
+      if (early != null && late != null && Math.abs(late - early) > biggestSwing) {
+        biggestSwing = Math.abs(late - early);
+        biggestFeature = key;
+      }
+    });
+    const featureLabel = { danceability: 'Danceability', energy: 'Energy', acousticness: 'Acousticness', valence: 'Mood', speechiness: 'Speechiness' }[biggestFeature];
+
+    [
+      { num: `${yearsPresent}`, label: 'years of data tracked, 2000 – 2020' },
+      { num: `+${Math.round(biggestSwing * 100)}%`, label: `shift in ${featureLabel} — the trait that changed most across all genres` },
+    ].forEach(({ num, label }) => {
+      const el = document.createElement('div');
+      el.className = 'transition-stat';
+      el.innerHTML = `<div class="transition-stat__num">${num}</div><p class="transition-stat__label">${label}</p>`;
+      timelineStatsEl.append(el);
+    });
+  }
 }
 
 function initStoryScroll() {
-  const story = document.querySelector('.story-scroll');
-  if (!story) return;
+  // Remove any spacers left from the old sticky layout
+  document.querySelectorAll('.story-scroll__spacer').forEach((el) => el.remove());
 
   const chapters = [
+    document.getElementById('story-hook'),
     document.getElementById('genre-guess'),
     document.getElementById('transition-explore'),
     document.getElementById('genre-explorer'),
@@ -2149,147 +2411,31 @@ function initStoryScroll() {
     document.getElementById('performance-explorer'),
     document.getElementById('transition-journey'),
     document.getElementById('artist-journey'),
+    document.getElementById('transition-timeline'),
     document.getElementById('story-takeaway'),
+    document.getElementById('story-finale'),
   ].filter(Boolean);
-  const summaryEl = document.getElementById('game-summary');
+
   if (!chapters.length) return;
 
-  const spacerCount = story.querySelectorAll('.story-scroll__spacer').length;
-  if (spacerCount !== chapters.length) {
-    story.querySelectorAll('.story-scroll__spacer').forEach((spacer) => spacer.remove());
-    chapters.forEach(() => {
-      const spacer = document.createElement('div');
-      spacer.className = 'story-scroll__spacer';
-      spacer.setAttribute('aria-hidden', 'true');
-      story.append(spacer);
+  function nearestChapterIndex() {
+    const mid = window.scrollY + window.innerHeight / 2;
+    let best = 0, bestDist = Infinity;
+    chapters.forEach((ch, i) => {
+      const top = ch.getBoundingClientRect().top + window.scrollY;
+      const dist = Math.abs(top + ch.offsetHeight / 2 - mid);
+      if (dist < bestDist) { bestDist = dist; best = i; }
     });
+    return best;
   }
 
-  const stage = story.querySelector('.story-stage');
-  const spacers = [...story.querySelectorAll('.story-scroll__spacer')];
-  const stickyTopPx = stage
-    ? parseFloat(getComputedStyle(stage).top) || 16
-    : 16;
-  let activeIndex = -1;
-
-  function updateSummaryForChapter(index) {
-    const guess = document.getElementById('genre-guess');
-    const guessComplete = guess?.classList.contains('is-complete');
-    const showSummary = index === 0 && guessComplete;
-
-    if (guess && index === 0) {
-      guess.classList.toggle('is-story-active', !showSummary);
-    }
-
-    if (!summaryEl) return;
-    summaryEl.hidden = !showSummary;
-    summaryEl.classList.toggle('is-story-active', showSummary);
-    summaryEl.toggleAttribute('inert', !showSummary);
-    summaryEl.setAttribute('aria-hidden', String(!showSummary));
-  }
-
-  function setActive(index) {
-    if (index !== activeIndex) {
-      activeIndex = index;
-      chapters.forEach((chapter, i) => {
-        const active = i === index;
-        chapter.hidden = !active;
-        chapter.classList.toggle('is-story-active', active);
-        chapter.toggleAttribute('inert', !active);
-        chapter.setAttribute('aria-hidden', String(!active));
-      });
-    }
-    updateSummaryForChapter(index);
-  }
-
-  refreshStoryChapter = () => {
-    if (window.matchMedia('(max-width: 860px)').matches) return;
-    setActive(activeIndex < 0 ? 0 : activeIndex);
-  };
-
-  function spacerScrollDistance() {
-    return Math.max(
-      1,
-      spacers.reduce((sum, el) => sum + el.offsetHeight, 0),
-    );
-  }
-
-  /** Fixed stage height for scroll math (visual stage may shrink for guess/summary) */
-  function storyStageScrollHeight() {
-    return Math.max(320, window.innerHeight - 32);
-  }
-
-  /** Progress through spacer stack only, after the sticky stage has pinned */
-  function storyScrollProgress() {
-    const storyTop = story.getBoundingClientRect().top;
-    if (storyTop > stickyTopPx) return 0;
-
-    const scrolledIntoStory = stickyTopPx - storyTop;
-    const throughSpacers = Math.max(0, scrolledIntoStory - storyStageScrollHeight());
-    return Math.min(0.999, throughSpacers / spacerScrollDistance());
-  }
-
-  function chapterFromProgress(progress, n) {
-    return Math.min(n - 1, Math.floor(progress * n));
-  }
-
-  function resolveChapter(progress, n) {
-    const candidate = chapterFromProgress(progress, n);
-    if (activeIndex < 0) return candidate;
-
-    const hyst = 0.1 / n;
-    if (candidate > activeIndex) {
-      const boundary = candidate / n;
-      return progress >= boundary - hyst ? candidate : activeIndex;
-    }
-    if (candidate < activeIndex) {
-      const boundary = activeIndex / n;
-      return progress < boundary - hyst ? candidate : activeIndex;
-    }
-    return activeIndex;
-  }
-
-  function update() {
-    if (window.matchMedia('(max-width: 860px)').matches) {
-      activeIndex = 0;
-      chapters.forEach((chapter) => {
-        chapter.hidden = false;
-        chapter.classList.remove('is-story-active');
-        chapter.removeAttribute('inert');
-        chapter.removeAttribute('aria-hidden');
-      });
-      if (summaryEl) {
-        const guessComplete = document.getElementById('genre-guess')?.classList.contains('is-complete');
-        summaryEl.hidden = !guessComplete;
-        summaryEl.classList.remove('is-story-active');
-        summaryEl.removeAttribute('inert');
-        summaryEl.removeAttribute('aria-hidden');
-      }
-      return;
-    }
-
-    const n = chapters.length;
-    setActive(resolveChapter(storyScrollProgress(), n));
-  }
-
-  update();
-  window.addEventListener('scroll', update, { passive: true });
-  window.addEventListener('resize', update);
-
-  function scrollToChapter(targetIndex) {
-    if (window.matchMedia('(max-width: 860px)').matches) return;
-    if (targetIndex < 0) {
+  function scrollToChapter(index) {
+    if (index < 0) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    const n = chapters.length;
-    const clamped = Math.min(n - 1, targetIndex);
-    const targetProgress = (clamped + 0.5) / n;
-    const throughSpacers = targetProgress * spacerScrollDistance();
-    const scrolledIntoStory = throughSpacers + storyStageScrollHeight();
-    const storyDocTop = story.getBoundingClientRect().top + window.scrollY;
-    const targetScrollY = storyDocTop - stickyTopPx + scrolledIntoStory;
-    window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
+    chapters[Math.min(index, chapters.length - 1)]
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   const arrowHintEl = document.getElementById('arrow-nav-hint');
@@ -2302,17 +2448,16 @@ function initStoryScroll() {
   }
 
   window.addEventListener('keydown', (e) => {
-    if (window.matchMedia('(max-width: 860px)').matches) return;
     const tag = document.activeElement?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
     if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
       e.preventDefault();
       dismissArrowHint();
-      scrollToChapter(activeIndex + 1);
+      scrollToChapter(nearestChapterIndex() + 1);
     } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
       e.preventDefault();
       dismissArrowHint();
-      scrollToChapter(activeIndex - 1);
+      scrollToChapter(nearestChapterIndex() - 1);
     }
   });
 }
@@ -2400,6 +2545,7 @@ async function init() {
   initPerformanceExplorer(pool);
   initArtistJourney(pool);
   initTransitions(pool);
+  initTimeline(pool);
   initStoryScroll();
 
   document.getElementById('btn-next-track').addEventListener('click', () => {
