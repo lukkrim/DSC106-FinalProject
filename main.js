@@ -2351,7 +2351,7 @@ function initTransitions(pool) {
     const minYear = Math.min(...allYears);
     const maxYear = Math.max(...allYears);
     [
-      { num: `${JOURNEY_ARTISTS.length}`, label: 'featured artists across pop, R&B, and rap' },
+      { num: `${JOURNEY_ARTISTS.length}+`, label: 'artists to explore — recommended picks plus a searchable catalog of 200+ more' },
       {
         num: `${maxYear - minYear}yrs`,
         label: `of music history tracked, ${minYear}–${maxYear}`,

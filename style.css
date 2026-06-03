@@ -61,11 +61,22 @@ textarea {
 .site-header {
   max-width: none;
   margin: 0;
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .site-header__content {
   display: none;
+}
+
+.site-credits {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 500;
 }
 
 
@@ -1968,7 +1979,7 @@ body {
 
 .site-header {
   max-width: none;
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1.5rem;
 }
 
 .site-nav {
