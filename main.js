@@ -2032,15 +2032,124 @@ function initArtistJourney(pool) {
   resizeObserver.observe(svgEl);
 }
 
+function initTransitions(pool) {
+  // Compute per-genre averages
+  const genreAvgs = {};
+  GENRES.forEach(({ id }) => {
+    const tracks = pool.filter((t) => t.playlist_genre === id);
+    genreAvgs[id] = {
+      danceability: d3.mean(tracks, (t) => t.danceability) ?? 0,
+      energy: d3.mean(tracks, (t) => t.energy) ?? 0,
+      acousticness: d3.mean(tracks, (t) => t.acousticness) ?? 0,
+      popularity: d3.mean(tracks, (t) => t.track_popularity) ?? 0,
+    };
+  });
+
+  // Transition 1 — genre danceability bar chart
+  const barsEl = document.getElementById('transition-explore-bars');
+  if (barsEl) {
+    const features = [
+      { key: 'danceability', label: 'Danceability' },
+      { key: 'acousticness', label: 'Acousticness' },
+    ];
+    features.forEach(({ key, label }) => {
+      const sorted = [...GENRES].sort(
+        (a, b) => (genreAvgs[b.id]?.[key] ?? 0) - (genreAvgs[a.id]?.[key] ?? 0),
+      );
+      const groupEl = document.createElement('div');
+      const labelEl = document.createElement('p');
+      labelEl.className = 'transition-feature-label';
+      labelEl.textContent = label;
+      const rowsEl = document.createElement('div');
+      rowsEl.className = 'transition-bar-rows';
+      sorted.forEach(({ id, label: gLabel }) => {
+        const val = genreAvgs[id]?.[key] ?? 0;
+        const pct = Math.round(val * 100);
+        const color = GENRE_COLORS[id] ?? '#c67b5c';
+        const row = document.createElement('div');
+        row.className = 'transition-bar-row';
+        row.innerHTML = `
+          <span class="transition-bar-genre" style="color:${color}">${gLabel}</span>
+          <div class="transition-bar-track"><div class="transition-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+          <span class="transition-bar-value">${pct}%</span>
+        `;
+        rowsEl.append(row);
+      });
+      groupEl.append(labelEl, rowsEl);
+      barsEl.append(groupEl);
+    });
+  }
+
+  // Transition 2 — performance stat cards
+  const performEl = document.getElementById('transition-perform-stats');
+  if (performEl) {
+    const topGenre = GENRES.reduce((best, g) =>
+      (genreAvgs[g.id]?.popularity ?? 0) > (genreAvgs[best.id]?.popularity ?? 0) ? g : best,
+    GENRES[0]);
+    const validPairs = pool.filter(
+      (t) => Number.isFinite(t.danceability) && Number.isFinite(t.track_popularity),
+    );
+    const r = pearsonR(
+      validPairs.map((t) => t.danceability),
+      validPairs.map((t) => t.track_popularity),
+    );
+    [
+      { num: pool.length.toLocaleString(), label: 'tracks measured across six genres' },
+      {
+        num: topGenre.label,
+        label: `is the most popular genre on average (${Math.round(genreAvgs[topGenre.id].popularity)}/100)`,
+      },
+      {
+        num: `r = ${r >= 0 ? '+' : ''}${r.toFixed(2)}`,
+        label: "danceability's correlation with popularity — weaker than you'd expect",
+      },
+    ].forEach(({ num, label }) => {
+      const el = document.createElement('div');
+      el.className = 'transition-stat';
+      el.innerHTML = `<div class="transition-stat__num">${num}</div><p class="transition-stat__label">${label}</p>`;
+      performEl.append(el);
+    });
+  }
+
+  // Transition 3 — artist journey intro stats
+  const journeyStatsEl = document.getElementById('transition-journey-stats');
+  if (journeyStatsEl) {
+    const allYears = JOURNEY_ARTISTS.flatMap((a) =>
+      pool
+        .filter((t) => t.track_artist === a.id && t.track_album_release_date)
+        .map((t) => +t.track_album_release_date.slice(0, 4))
+        .filter((y) => y > 1990),
+    );
+    const minYear = Math.min(...allYears);
+    const maxYear = Math.max(...allYears);
+    [
+      { num: `${JOURNEY_ARTISTS.length}`, label: 'featured artists across pop, R&B, and rap' },
+      {
+        num: `${maxYear - minYear}yrs`,
+        label: `of music history tracked, ${minYear}–${maxYear}`,
+      },
+    ].forEach(({ num, label }) => {
+      const el = document.createElement('div');
+      el.className = 'transition-stat';
+      el.innerHTML = `<div class="transition-stat__num">${num}</div><p class="transition-stat__label">${label}</p>`;
+      journeyStatsEl.append(el);
+    });
+  }
+}
+
 function initStoryScroll() {
   const story = document.querySelector('.story-scroll');
   if (!story) return;
 
   const chapters = [
     document.getElementById('genre-guess'),
+    document.getElementById('transition-explore'),
     document.getElementById('genre-explorer'),
+    document.getElementById('transition-perform'),
     document.getElementById('performance-explorer'),
+    document.getElementById('transition-journey'),
     document.getElementById('artist-journey'),
+    document.getElementById('story-takeaway'),
   ].filter(Boolean);
   const summaryEl = document.getElementById('game-summary');
   if (!chapters.length) return;
@@ -2290,6 +2399,7 @@ async function init() {
   initRandomTrackPlayer(pool);
   initPerformanceExplorer(pool);
   initArtistJourney(pool);
+  initTransitions(pool);
   initStoryScroll();
 
   document.getElementById('btn-next-track').addEventListener('click', () => {
