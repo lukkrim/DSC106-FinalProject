@@ -2315,7 +2315,17 @@ main {
   flex-direction: column;
 }
 
-.story-stage > .story-hook,
+.story-stage > .story-hook {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 6vh 2rem 3rem;
+  box-sizing: border-box;
+  text-align: center;
+}
+
 .story-stage > .story-finale {
   min-height: 100dvh;
   display: flex;
