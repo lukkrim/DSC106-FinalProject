@@ -125,7 +125,7 @@ main {
   width: 100%;
   max-width: none;
   margin: 0 auto;
-  padding: 0 clamp(5rem, 15vw, 12.5rem) 1.5rem;
+  padding: 0 max(3rem, 12vw) 1.5rem;
 }
 
 .genre-guess h2 {
@@ -2341,7 +2341,7 @@ main {
 }
 
 .story-stage > .story-finale {
-  min-height: 100dvh;
+  min-height: min(100dvh, 54rem);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2355,7 +2355,7 @@ main {
 .story-stage > .genre-explorer,
 .story-stage > .performance-explorer,
 .story-stage > .artist-journey {
-  min-height: 100dvh;
+  min-height: min(100dvh, 58rem);
   display: flex;
   flex-direction: column;
   padding: 1.5rem 2rem;
@@ -3087,6 +3087,10 @@ main {
 }
 
 @media (max-width: 860px) {
+  main {
+    padding-inline: 1rem;
+  }
+
   .genre-explorer__layout,
   .performance-explorer__layout,
   .artist-journey__layout {
