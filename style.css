@@ -72,11 +72,18 @@ textarea {
   display: none;
 }
 
+.site-credits-group {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
 .site-credits {
   margin: 0;
   font-size: 0.72rem;
   color: var(--muted);
   font-weight: 500;
+  line-height: 1.35;
 }
 
 
