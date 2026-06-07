@@ -11,8 +11,8 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet"
   >
-  <link rel="stylesheet" href="style.css?v=55">
-  <script src="main.js?v=16" type="module"></script>
+  <link rel="stylesheet" href="style.css?v=70">
+  <script src="main.js?v=31" type="module"></script>
 </head>
 <body>
   <header class="site-header">
@@ -22,7 +22,7 @@
       <p class="site-credits">Project Link: https://lukkrim.github.io/DSC106-FinalProject/</p>
     </div>
     <nav class="site-nav" aria-label="Site navigation">
-      <a href="writeup/index.html">Write-up</a>
+      <a href="https://youtu.be/YeEjgPstpi4" target="_blank" rel="noopener">Demo video</a>
     </nav>
     <div class="site-header__content">
       <h1>What Does a Genre Sound Like?</h1>
@@ -39,7 +39,7 @@
         <div class="story-hook__inner">
           <p class="label">An interactive story</p>
           <h2 class="story-hook__headline">We think we know genre.<br>The data has an opinion.</h2>
-          <p class="story-hook__sub">Six genres. ~33,000 songs. Eight audio traits measured by Spotify. Can you actually hear the difference — or are you just guessing?</p>
+          <p class="story-hook__sub">Six genres. ~33,000 songs. 21 years of music. Is genre just a sound, or a story?</p>
           <p class="story-hook__cta" aria-hidden="true">↓ Scroll to find out</p>
         </div>
       </section>
@@ -168,13 +168,26 @@
         </button>
       </section>
 
-      <section class="story-transition" id="transition-explore" aria-labelledby="transition-explore-h">
-        <div class="story-transition__inner">
-          <p class="label">Behind the music</p>
-          <h2 id="transition-explore-h">You felt the genre. Now see the data.</h2>
-          <p class="story-transition__lede">Every track in our dataset was measured across eight audio traits. Genres cluster into distinct sonic profiles — and the differences are bigger than you might expect.</p>
-          <div class="story-transition__feature-group" id="transition-explore-bars"></div>
+      <section class="story-transition story-quotes" id="transition-explore" aria-label="Definitions of genre">
+        <h2 class="quotes-title">How do you define genre?</h2>
+        <div class="quotes-body">
+          <blockquote class="scroll-quote scroll-quote--left"
+            data-quote="Genre is the name we use to describe the categories that have developed over time for what we read, what we watch, and what we listen to.">
+            <p class="quote-text"></p>
+            <cite>— OSU College of Liberal Arts</cite>
+          </blockquote>
+          <blockquote class="scroll-quote scroll-quote--center"
+            data-quote="A musical genre is a set of musical events whose course is governed by a definite set of socially accepted rules.">
+            <p class="quote-text"></p>
+            <cite>— Franco Fabbri</cite>
+          </blockquote>
+          <blockquote class="scroll-quote scroll-quote--right"
+            data-quote="Genre is not a static, immovable idea but a reflection of an audience's assumptions and wants.">
+            <p class="quote-text"></p>
+            <cite>— The New Yorker</cite>
+          </blockquote>
         </div>
+        <p class="quotes-writeup">Three definitions from three different fields — literary, academic, and journalistic. What they all agree on: genre is real, it's social, and it changes. You just heard it yourself.</p>
       </section>
 
       <section
@@ -183,10 +196,10 @@
         aria-labelledby="genre-explorer-title"
       >
       <div class="genre-explorer__header">
-        <p class="label">Explore the dataset</p>
-        <h2 id="genre-explorer-title">Genre fingerprints</h2>
+        <p class="label">Under the hood</p>
+        <h2 id="genre-explorer-title">Every genre has a sonic fingerprint</h2>
         <p>
-          Compare the average audio characteristics of all six playlist genres.
+          Those guesses weren't random — your ears were picking up on patterns embedded in thousands of songs. Here's what the data says each genre actually sounds like.
         </p>
       </div>
 
@@ -239,9 +252,9 @@
 
       <section class="story-transition" id="transition-perform" aria-labelledby="transition-perform-h">
         <div class="story-transition__inner">
-          <p class="label">The harder question</p>
-          <h2 id="transition-perform-h">Does sounding like a genre make a song popular?</h2>
-          <p class="story-transition__lede">You've seen what makes genres distinct. But does having the right audio fingerprint actually drive streaming success? The answer might surprise you.</p>
+          <p class="label">The twist</p>
+          <h2 id="transition-perform-h">The fingerprint is real. The hit isn't guaranteed.</h2>
+          <p class="story-transition__lede">Rap is wordy. EDM is danceable. Rock is loud. The patterns hold up across thousands of songs. But when we matched those fingerprints against streaming popularity, the correlation nearly vanishes.</p>
           <div class="story-transition__stats" id="transition-perform-stats"></div>
         </div>
       </section>
@@ -252,11 +265,10 @@
         aria-labelledby="performance-explorer-title"
       >
       <div class="performance-explorer__header">
-        <p class="label">Popularity patterns</p>
-        <h2 id="performance-explorer-title">What makes a track perform?</h2>
+        <p class="label">Digging deeper</p>
+        <h2 id="performance-explorer-title">So what actually drives streaming success?</h2>
         <p>
-          Follow three views of the dataset to compare popularity with duration,
-          musical traits, and artist-level consistency.
+          We tested song length, eight audio traits, and artist consistency against popularity. The results are messier — and more interesting — than you'd expect.
         </p>
       </div>
 
@@ -314,9 +326,9 @@
 
       <section class="story-transition" id="transition-journey" aria-labelledby="transition-journey-h">
         <div class="story-transition__inner">
-          <p class="label">Zooming in</p>
-          <h2 id="transition-journey-h">Genre trends are made by people.</h2>
-          <p class="story-transition__lede">Genre averages reveal patterns — but they're the sum of thousands of individual artistic choices. Let's follow a specific artist across their entire career, year by year, and see how their sound and popularity evolved together.</p>
+          <p class="label">Behind the average</p>
+          <h2 id="transition-journey-h">Behind every genre average is an artist making a bet.</h2>
+          <p class="story-transition__lede">Statistics describe genres. Artists define them — by deciding when to experiment, when to stay in their lane, and when to reinvent themselves entirely. Let's follow specific careers and watch those decisions play out year by year.</p>
           <div class="story-transition__stats" id="transition-journey-stats"></div>
         </div>
       </section>
@@ -399,9 +411,9 @@
 
       <section class="story-transition" id="transition-timeline" aria-labelledby="transition-timeline-h">
         <div class="story-transition__inner">
-          <p class="label">Stepping back</p>
-          <h2 id="transition-timeline-h">Every artist is part of a bigger wave.</h2>
-          <p class="story-transition__lede">You've seen how one artist's sound shifts year by year. Now zoom out: what happened to entire genres over two decades? The patterns are slower — but just as real.</p>
+          <p class="label">Zoom out</p>
+          <h2 id="transition-timeline-h">What one artist does, a generation follows.</h2>
+          <p class="story-transition__lede">Individual artists evolve. So do entire genres. Multiply those choices across thousands of artists and 21 years, and the sonic drift becomes undeniable — some traits change slowly, others shift all at once.</p>
           <div class="story-transition__stats" id="transition-timeline-stats"></div>
         </div>
       </section>
@@ -427,25 +439,25 @@
           <p class="label">What we learned</p>
           <h2 id="story-finale-h">Three things the data taught us</h2>
           <div class="story-finale__points">
-            <div class="story-finale__point">
+            <div class="story-finale__point" data-num="01">
               <span class="story-finale__num">01</span>
               <div>
-                <h3>Genre has a real sound</h3>
-                <p>Each genre clusters around distinct audio traits — speechiness, energy, acousticness. Your ears weren't wrong; the data agrees.</p>
+                <h3>Your ears were right all along</h3>
+                <p>You can hear genre before you can name it. That instinct isn't imaginary — it's detecting real patterns in tempo, energy, and texture that consistently separate one genre from another across thousands of songs.</p>
               </div>
             </div>
-            <div class="story-finale__point">
+            <div class="story-finale__point" data-num="02">
               <span class="story-finale__num">02</span>
               <div>
-                <h3>Sound alone doesn't make a hit</h3>
-                <p>Audio traits explain surprisingly little of a song's popularity. Timing, artist recognition, and cultural moment matter far more than any fingerprint.</p>
+                <h3>Popularity is harder to engineer than the sound</h3>
+                <p>We tested every audio trait against streaming numbers. None predicted success very well. What does? Timing. Recognition. The cultural moment a song arrives in. The music is almost beside the point.</p>
               </div>
             </div>
-            <div class="story-finale__point">
+            <div class="story-finale__point" data-num="03">
               <span class="story-finale__num">03</span>
               <div>
-                <h3>Music shifts slowly — then all at once</h3>
-                <p>Year by year, genres drift. Some traits converge across the whole landscape. Others diverge sharply. The changes are subtle until suddenly they aren't.</p>
+                <h3>The genre you love already changed</h3>
+                <p>It didn't happen overnight. Acousticness fell. Danceability climbed. The genre you grew up with sounds different now — shaped by millions of small artistic choices adding up over two decades.</p>
               </div>
             </div>
           </div>

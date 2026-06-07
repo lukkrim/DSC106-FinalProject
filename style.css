@@ -919,6 +919,22 @@ main {
   font-style: italic;
 }
 
+.genre-radar-svg {
+  width: 100%;
+  max-width: 220px;
+  display: block;
+  margin: 0.5rem auto 0;
+  overflow: visible;
+}
+
+.genre-radar-label {
+  font-size: 8.5px;
+  font-weight: 700;
+  fill: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 @media (max-width: 860px) {
   .genre-explorer__layout {
     grid-template-columns: 1fr;
@@ -2345,6 +2361,8 @@ main {
   padding: clamp(2.5rem, 5vh, 4rem) 2rem 2rem;
   box-sizing: border-box;
   text-align: center;
+  position: relative;
+  overflow: hidden;
 }
 
 .story-stage > .story-finale {
@@ -2356,6 +2374,8 @@ main {
   padding: 3rem 2rem;
   box-sizing: border-box;
   text-align: center;
+  position: relative;
+  overflow: hidden;
 }
 
 .story-stage > .genre-guess,
@@ -2757,6 +2777,88 @@ main {
   padding: 0.5rem 0;
 }
 
+/* Quotes section overrides */
+.story-stage > .story-quotes {
+  justify-content: flex-start;
+  align-items: stretch;
+  min-height: 100dvh;
+  padding: 4rem 3rem;
+  gap: 0;
+}
+
+.quotes-title {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  margin: 0 0 3rem;
+}
+
+.quotes-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  flex: 1;
+}
+
+.scroll-quote {
+  margin: 0;
+  max-width: 22rem;
+}
+
+.scroll-quote--left  { margin-right: auto; }
+.scroll-quote--center { margin-left: auto; margin-right: auto; text-align: center; }
+.scroll-quote--right  { margin-left: auto; text-align: right; }
+
+.quotes-writeup {
+  margin: 3rem 0 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.65;
+  max-width: 36rem;
+  border-top: 1px solid var(--ring);
+  padding-top: 1.25rem;
+}
+
+.quote-text {
+  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  font-style: italic;
+  line-height: 1.65;
+  color: var(--text);
+  margin: 0 0 0.5rem;
+  min-height: 1.3em;
+}
+
+.quote-text::before { content: '\201C'; }
+.quote-text::after  { content: '\201D'; }
+
+.quote-text.is-typing::after {
+  content: '\201D';
+  animation: none;
+}
+
+.scroll-quote cite {
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: var(--muted);
+  font-style: normal;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.scroll-quote.is-done cite {
+  opacity: 1;
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.quote-cursor::after {
+  content: '\201D\007C';
+  animation: cursor-blink 0.55s step-end infinite;
+}
+
 .story-takeaway__inner {
   width: 100%;
   padding: 1.75rem 2rem;
@@ -2957,12 +3059,48 @@ main {
   opacity: 0.35;
 }
 
+.timeline-square:hover {
+  filter: brightness(0.78);
+  transform: scale(1.18);
+  z-index: 1;
+  transition: filter 0.1s ease, transform 0.1s ease, background 0.35s ease;
+}
+
 .timeline-year-label {
   font-size: 9.5px;
   font-weight: 700;
   color: rgba(0, 0, 0, 0.4);
   line-height: 1;
   pointer-events: none;
+}
+
+.timeline-tooltip {
+  position: fixed;
+  z-index: 100;
+  padding: 0.5rem 0.65rem;
+  background: var(--surface);
+  border: 1px solid var(--ring);
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(58, 47, 40, 0.14);
+  pointer-events: none;
+  min-width: 8rem;
+}
+
+.timeline-tooltip strong,
+.timeline-tooltip span,
+.timeline-tooltip small {
+  display: block;
+}
+
+.timeline-tooltip span {
+  margin-top: 0.15rem;
+  font-weight: 700;
+}
+
+.timeline-tooltip small {
+  margin-top: 0.1rem;
+  color: var(--muted);
+  font-size: 0.72rem;
 }
 
 .timeline-legend-wrap {
@@ -2998,6 +3136,7 @@ main {
 
 .story-hook__inner {
   width: min(100%, 58rem);
+  position: relative;
 }
 
 .story-hook__headline {
@@ -3036,6 +3175,7 @@ main {
   max-width: 36rem;
   width: 100%;
   text-align: left;
+  position: relative;
 }
 
 .story-finale__inner h2 {
@@ -3059,6 +3199,22 @@ main {
   background: rgba(255, 250, 246, 0.72);
   border: 1px solid var(--ring);
   border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.story-finale__point::before {
+  content: attr(data-num);
+  position: absolute;
+  top: -0.6rem;
+  left: 0.4rem;
+  font-size: 7rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent);
+  opacity: 0.07;
+  pointer-events: none;
+  user-select: none;
 }
 
 .story-finale__num {
@@ -3158,4 +3314,50 @@ main {
   .listening-guide__grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ── Visual effects ─────────────────────────────────────────── */
+
+/* Scattered background music notes */
+.bg-note {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+  line-height: 1;
+}
+
+.story-hook .bg-note {
+  color: rgba(198, 123, 92, 0.12);
+}
+
+.story-finale .bg-note {
+  color: rgba(198, 123, 92, 0.08);
+}
+
+/* Floating notes animation (plays once on load) */
+@keyframes float-note {
+  0%   { opacity: 0;    transform: translateY(0)      rotate(var(--rot)); }
+  15%  { opacity: 0.6; }
+  100% { opacity: 0;    transform: translateY(-110px) rotate(calc(var(--rot) + 18deg)); }
+}
+
+.float-note {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+  color: rgba(198, 123, 92, 0.55);
+  animation: float-note 3s ease-out both;
+  z-index: 0;
+}
+
+/* Fade-up reveal on scroll */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+
+.reveal-on-scroll.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
 }

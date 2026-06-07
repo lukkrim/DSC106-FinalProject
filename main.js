@@ -533,21 +533,98 @@ function renderGenreExplorerProfile(stats, selectedGenre) {
   meta.textContent = `${selected.count.toLocaleString()} tracks in this dataset`;
   bars.replaceChildren();
 
-  EXPLORER_FEATURES.forEach((feature) => {
-    const row = document.createElement('div');
-    row.className = 'genre-profile__bar';
-    const value = selected.means[feature.key];
-    row.innerHTML = `
-      <span>${feature.label}</span>
-      <i style="--value: ${featureRatio(selected.means, feature.key) * 100}%"></i>
-      <strong>${formatExploreValue(feature.key, value)}</strong>
-    `;
-    bars.append(row);
+  // Radar chart
+  const radarFeatures = [
+    { key: 'danceability', label: 'Dance' },
+    { key: 'energy', label: 'Energy' },
+    { key: 'valence', label: 'Mood' },
+    { key: 'acousticness', label: 'Acoustic' },
+    { key: 'speechiness', label: 'Speech' },
+    { key: 'instrumentalness', label: 'Instr.' },
+  ];
+  const N = radarFeatures.length;
+  const SIZE = 220;
+  const cx = SIZE / 2;
+  const cy = SIZE / 2;
+  const R = 78;
+  const labelR = 100;
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const accent = GENRE_COLORS[selected.genre] ?? '#c67b5c';
+
+  function mk(tag, attrs) {
+    const el = document.createElementNS(SVG_NS, tag);
+    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, String(v)));
+    return el;
+  }
+  function polarPt(r, i) {
+    const a = (2 * Math.PI * i) / N - Math.PI / 2;
+    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  }
+  function ptsStr(r, vals) {
+    return radarFeatures.map((_, i) => {
+      const [x, y] = polarPt(r * (vals ? vals[i] : 1), i);
+      return `${x},${y}`;
+    }).join(' ');
+  }
+
+  const svg = mk('svg', { viewBox: `0 0 ${SIZE} ${SIZE}`, class: 'genre-radar-svg' });
+
+  // Grid rings
+  [0.33, 0.66, 1].forEach((t) => {
+    svg.append(mk('polygon', { points: ptsStr(R * t), fill: 'none', stroke: 'rgba(0,0,0,0.09)', 'stroke-width': 1 }));
   });
 
-  note.textContent = selected.example
-    ? `A popular ${selected.label} example here is "${selected.example.track_name}" by ${selected.example.track_artist}.`
-    : '';
+  // Axis spokes
+  radarFeatures.forEach((_, i) => {
+    const [x2, y2] = polarPt(R, i);
+    svg.append(mk('line', { x1: cx, y1: cy, x2, y2, stroke: 'rgba(0,0,0,0.09)', 'stroke-width': 1 }));
+  });
+
+  // Normalize each axis relative to all genres, but floor at 0.2 so no trait
+  // collapses to the center — even the lowest genre shows at 20% of the radius
+  const vals = radarFeatures.map((f) => {
+    const allVals = stats.map((s) => s.means[f.key] ?? 0);
+    const lo = Math.min(...allVals);
+    const hi = Math.max(...allVals);
+    const raw = selected.means[f.key] ?? 0;
+    const t = hi > lo ? (raw - lo) / (hi - lo) : 0.5;
+    return 0.2 + t * 0.8;
+  });
+  svg.append(mk('polygon', {
+    points: ptsStr(R, vals),
+    fill: accent, 'fill-opacity': '0.22',
+    stroke: accent, 'stroke-width': 2, 'stroke-linejoin': 'round',
+  }));
+
+  // Data dots
+  radarFeatures.forEach((f, i) => {
+    const [x, y] = polarPt(R * vals[i], i);
+    svg.append(mk('circle', { cx: x, cy: y, r: 3.5, fill: accent, stroke: '#fffaf6', 'stroke-width': 1.5 }));
+  });
+
+  // Labels
+  radarFeatures.forEach((f, i) => {
+    const [x, y] = polarPt(labelR, i);
+    const anchor = x < cx - 8 ? 'end' : x > cx + 8 ? 'start' : 'middle';
+    const baseline = y < cy - 8 ? 'hanging' : y > cy + 8 ? 'auto' : 'middle';
+    const lbl = mk('text', { x, y, 'text-anchor': anchor, 'dominant-baseline': baseline, class: 'genre-radar-label' });
+    lbl.textContent = f.label;
+    svg.append(lbl);
+  });
+
+  bars.append(svg);
+
+  // Compute which traits this genre leads and trails relative to all others
+  const ranks = radarFeatures.map((f) => {
+    const sorted = [...stats].sort((a, b) => (b.means[f.key] ?? 0) - (a.means[f.key] ?? 0));
+    return { label: f.label, rank: sorted.findIndex((s) => s.genre === selected.genre) + 1 };
+  });
+  const leads = ranks.filter((r) => r.rank === 1).map((r) => r.label);
+  const trails = ranks.filter((r) => r.rank === stats.length).map((r) => r.label);
+  const parts = [];
+  if (leads.length) parts.push(`Leads in: ${leads.join(', ')}`);
+  if (trails.length) parts.push(`Trails in: ${trails.join(', ')}`);
+  note.textContent = parts.join(' · ') || 'Mid-range across most traits.';
 }
 
 function initGenreExplorer(pool) {
@@ -767,7 +844,7 @@ function buildArtistStats(pool) {
       avgPopularity: d3.mean(rows, (track) => track.track_popularity),
       topTrack: [...rows].sort((a, b) => b.track_popularity - a.track_popularity)[0],
     }))
-    .filter((artist) => artist.count >= 5 && Number.isFinite(artist.avgPopularity))
+    .filter((artist) => artist.count >= 10 && Number.isFinite(artist.avgPopularity))
     .sort((a, b) => d3.descending(a.avgPopularity, b.avgPopularity))
     .slice(0, 12);
 }
@@ -814,10 +891,10 @@ function setPerformanceNote(view, featureKey, data) {
 
   title.textContent = 'Which artists are consistently popular?';
   copy.textContent =
-    'This view ranks artists with at least five tracks in the dataset by average popularity, so one hit song does not dominate the story.';
+    'This view ranks artists with at least ten tracks in the dataset by average popularity, so one hit song does not dominate the story.';
   [
     { label: 'Artists shown', value: data.length },
-    { label: 'Minimum tracks', value: '5' },
+    { label: 'Minimum tracks', value: '10' },
   ].forEach(addStat);
 }
 
@@ -2032,6 +2109,49 @@ function initArtistJourney(pool) {
   resizeObserver.observe(svgEl);
 }
 
+function initQuoteTypewriter() {
+  const section = document.getElementById('transition-explore');
+  if (!section) return;
+
+  const quotes = [...section.querySelectorAll('.scroll-quote')].filter((el) => el.dataset.quote);
+  if (!quotes.length) return;
+
+  let triggered = false;
+
+  function typeQuote(index) {
+    if (index >= quotes.length) return;
+    const block = quotes[index];
+    const textEl = block.querySelector('.quote-text');
+    const full = block.dataset.quote ?? '';
+    if (!textEl) { typeQuote(index + 1); return; }
+
+    textEl.classList.add('quote-cursor');
+    let i = 0;
+    const timer = setInterval(() => {
+      textEl.textContent = full.slice(0, ++i);
+      if (i >= full.length) {
+        clearInterval(timer);
+        textEl.classList.remove('quote-cursor');
+        block.classList.add('is-done');
+        setTimeout(() => typeQuote(index + 1), 350);
+      }
+    }, 18);
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0].isIntersecting && !triggered) {
+        triggered = true;
+        observer.disconnect();
+        typeQuote(0);
+      }
+    },
+    { threshold: 0.15 },
+  );
+
+  observer.observe(section);
+}
+
 function initTimeline(pool) {
   const gridEl = document.getElementById('timeline-grid');
   const controlsEl = document.getElementById('timeline-controls');
@@ -2059,7 +2179,8 @@ function initTimeline(pool) {
       const valid = forYear.filter((t) => Number.isFinite(t[f.key]));
       allFdata[f.key] = valid.length ? d3.mean(valid, (t) => t[f.key]) : null;
     });
-    yearGenreData[year].all = allFdata;
+    const allTop = [...forYear].sort((a, b) => b.track_popularity - a.track_popularity)[0] ?? null;
+    yearGenreData[year].all = { ...allFdata, topTrack: allTop };
     GENRES.forEach(({ id }) => {
       const tracks = forYear.filter((t) => t.playlist_genre === id);
       const gdata = {};
@@ -2067,7 +2188,8 @@ function initTimeline(pool) {
         const valid = tracks.filter((t) => Number.isFinite(t[f.key]));
         gdata[f.key] = valid.length ? d3.mean(valid, (t) => t[f.key]) : null;
       });
-      yearGenreData[year][id] = gdata;
+      const genreTop = [...tracks].sort((a, b) => b.track_popularity - a.track_popularity)[0] ?? null;
+      yearGenreData[year][id] = { ...gdata, topTrack: genreTop };
     });
   });
 
@@ -2128,6 +2250,33 @@ function initTimeline(pool) {
 
   controlsEl.append(featRow, genreRow);
 
+  // Tooltip
+  const tip = document.createElement('div');
+  tip.className = 'timeline-tooltip';
+  tip.hidden = true;
+  document.body.append(tip);
+
+  function showTip(e, year) {
+    const val = yearGenreData[year]?.[activeGenre]?.[activeFeature] ?? null;
+    const prevVal = year > 2000 ? (yearGenreData[year - 1]?.[activeGenre]?.[activeFeature] ?? null) : null;
+    const featureLabel = features.find((f) => f.key === activeFeature)?.label ?? activeFeature;
+    const genreLabel = activeGenre === 'all' ? 'All genres' : (GENRES.find((g) => g.id === activeGenre)?.label ?? activeGenre);
+    let changeLine = '';
+    if (val !== null && prevVal !== null) {
+      const diff = Math.round((val - prevVal) * 100);
+      if (diff !== 0) {
+        const sign = diff > 0 ? '↑' : '↓';
+        changeLine = `<small>${sign} ${Math.abs(diff)}% from ${year - 1}</small>`;
+      } else {
+        changeLine = `<small>No change from ${year - 1}</small>`;
+      }
+    }
+    tip.innerHTML = `<strong>${year} · ${genreLabel}</strong><span>${featureLabel}: ${val !== null ? Math.round(val * 100) + '%' : '—'}</span>${changeLine}`;
+    tip.hidden = false;
+    tip.style.left = `${e.clientX + 14}px`;
+    tip.style.top = `${e.clientY - 48}px`;
+  }
+
   // Build year squares
   const squares = years.map((year) => {
     const sq = document.createElement('div');
@@ -2136,6 +2285,12 @@ function initTimeline(pool) {
     lbl.className = 'timeline-year-label';
     lbl.textContent = year;
     sq.append(lbl);
+    sq.addEventListener('mouseenter', (e) => showTip(e, year));
+    sq.addEventListener('mousemove', (e) => {
+      tip.style.left = `${e.clientX + 14}px`;
+      tip.style.top = `${e.clientY - 48}px`;
+    });
+    sq.addEventListener('mouseleave', () => { tip.hidden = true; });
     gridEl.append(sq);
     return { el: sq, year };
   });
@@ -2178,6 +2333,61 @@ function initTimeline(pool) {
   }
 
   render();
+}
+
+function initVisualEffects() {
+  // Scattered background music notes in hook + finale
+  const noteChars = ['♩', '♪', '♫', '♬'];
+  function scatterNotes(section, count) {
+    if (!section) return;
+    // Keep notes in corners/edges so they don't hide behind the main content block
+    const positions = [
+      [4,8],[88,6],[3,52],[92,50],[6,82],[85,80],
+      [22,90],[50,93],[75,88],[18,4],[60,5],[82,12],
+    ];
+    for (let i = 0; i < Math.min(count, positions.length); i++) {
+      const [lp, tp] = positions[i];
+      const span = document.createElement('span');
+      span.className = 'bg-note';
+      span.setAttribute('aria-hidden', 'true');
+      span.textContent = noteChars[i % noteChars.length];
+      span.style.cssText = `left:${lp}%;top:${tp}%;transform:rotate(${-30 + i * 13}deg);font-size:${1.2 + (i % 3) * 0.5}rem;`;
+      // Prepend so notes sit behind the main content in DOM paint order
+      section.insertBefore(span, section.firstChild);
+    }
+  }
+  scatterNotes(document.getElementById('story-hook'), 12);
+  scatterNotes(document.getElementById('story-finale'), 8);
+
+  // Floating notes that drift up on page load
+  const hookEl = document.getElementById('story-hook');
+  if (hookEl) {
+    const floatPositions = [[14, 72], [28, 65], [50, 78], [68, 60], [84, 70]];
+    floatPositions.forEach(([lp, tp], i) => {
+      const note = document.createElement('span');
+      note.className = 'float-note';
+      note.setAttribute('aria-hidden', 'true');
+      note.textContent = noteChars[i % noteChars.length];
+      note.style.cssText = `left:${lp}%;top:${tp}%;font-size:${1.1 + (i % 2) * 0.5}rem;animation-delay:${i * 0.45}s;`;
+      note.style.setProperty('--rot', `${-22 + i * 11}deg`);
+      hookEl.append(note);
+    });
+  }
+
+  // Fade-up reveal on scroll for transition cards and finale
+  const revealTargets = [
+    ...document.querySelectorAll('.story-transition__inner'),
+    document.querySelector('.story-finale__inner'),
+    document.querySelector('.story-takeaway__inner'),
+  ].filter(Boolean);
+
+  const revealObs = new IntersectionObserver(
+    (entries) => entries.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add('is-revealed'); revealObs.unobserve(e.target); }
+    }),
+    { threshold: 0, rootMargin: '0px 0px -60px 0px' },
+  );
+  revealTargets.forEach((el) => { el.classList.add('reveal-on-scroll'); revealObs.observe(el); });
 }
 
 function initTransitions(pool) {
@@ -2311,25 +2521,42 @@ function initTransitions(pool) {
   // Transition 2 — performance stat cards
   const performEl = document.getElementById('transition-perform-stats');
   if (performEl) {
-    const topGenre = GENRES.reduce((best, g) =>
-      (genreAvgs[g.id]?.popularity ?? 0) > (genreAvgs[best.id]?.popularity ?? 0) ? g : best,
-    GENRES[0]);
-    const validPairs = pool.filter(
-      (t) => Number.isFinite(t.danceability) && Number.isFinite(t.track_popularity),
-    );
-    const r = pearsonR(
-      validPairs.map((t) => t.danceability),
-      validPairs.map((t) => t.track_popularity),
-    );
+    // Find the audio feature with the strongest correlation to popularity
+    const audioFeatures = ['danceability', 'energy', 'acousticness', 'valence', 'speechiness'];
+    const featureLabels = {
+      danceability: 'Danceability', energy: 'Energy', acousticness: 'Acousticness',
+      valence: 'Mood', speechiness: 'Speechiness',
+    };
+    let maxAbsR = 0, bestFeatureLabel = 'Danceability';
+    audioFeatures.forEach((key) => {
+      const pairs = pool.filter((t) => Number.isFinite(t[key]) && Number.isFinite(t.track_popularity));
+      if (pairs.length < 100) return;
+      const absR = Math.abs(pearsonR(pairs.map((t) => t[key]), pairs.map((t) => t.track_popularity)));
+      if (absR > maxAbsR) { maxAbsR = absR; bestFeatureLabel = featureLabels[key] ?? key; }
+    });
+
+    // Genre with highest danceability vs its popularity rank
+    const byDance = [...GENRES].sort((a, b) => (genreAvgs[b.id]?.danceability ?? 0) - (genreAvgs[a.id]?.danceability ?? 0));
+    const byPop = [...GENRES].sort((a, b) => (genreAvgs[b.id]?.popularity ?? 0) - (genreAvgs[a.id]?.popularity ?? 0));
+    const topDancer = byDance[0];
+    const topDancerPopRank = byPop.findIndex((g) => g.id === topDancer.id) + 1;
+
+    // Popularity spread across genres
+    const popValues = GENRES.map((g) => genreAvgs[g.id]?.popularity ?? 0);
+    const popSpread = Math.round(Math.max(...popValues) - Math.min(...popValues));
+
     [
-      { num: pool.length.toLocaleString(), label: 'tracks measured across six genres' },
       {
-        num: topGenre.label,
-        label: `is the most popular genre on average (${Math.round(genreAvgs[topGenre.id].popularity)}/100)`,
+        num: `r = ${maxAbsR.toFixed(2)}`,
+        label: `${bestFeatureLabel} is the strongest audio predictor of popularity we found — barely a signal`,
       },
       {
-        num: `r = ${r >= 0 ? '+' : ''}${r.toFixed(2)}`,
-        label: "danceability's correlation with popularity — weaker than you'd expect",
+        num: `#${topDancerPopRank} of ${GENRES.length}`,
+        label: `${topDancer.label} ranks for streams — despite leading all genres in danceability`,
+      },
+      {
+        num: `${popSpread} pts`,
+        label: `separate the most and least popular genre on average — a far tighter race than the fingerprints suggest`,
       },
     ].forEach(({ num, label }) => {
       const el = document.createElement('div');
@@ -2545,8 +2772,10 @@ async function init() {
   initPerformanceExplorer(pool);
   initArtistJourney(pool);
   initTransitions(pool);
+  initQuoteTypewriter();
   initTimeline(pool);
   initStoryScroll();
+  initVisualEffects();
 
   document.getElementById('btn-next-track').addEventListener('click', () => {
     onNextTrack(tracks, state);
