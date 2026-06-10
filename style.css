@@ -2393,12 +2393,12 @@ main {
 }
 
 .story-stage > .story-hook {
-  min-height: clamp(34rem, 62dvh, 46rem);
+  min-height: clamp(32rem, 54dvh, 42rem);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: clamp(2.5rem, 5vh, 4rem) 2rem 2rem;
+  padding: clamp(2.5rem, 5vh, 4rem) 2rem clamp(1.75rem, 4vh, 3rem);
   box-sizing: border-box;
   text-align: center;
   position: relative;
@@ -3175,28 +3175,30 @@ main {
 /* Hook intro */
 
 .story-hook__inner {
-  width: min(100%, 58rem);
+  width: min(100%, 86rem);
   position: relative;
 }
 
 .story-hook__headline {
-  font-size: clamp(2rem, 5vw, 3.4rem);
+  max-width: 20ch;
+  margin-inline: auto;
+  font-size: clamp(3rem, 6.2vw, 7.2rem);
   font-weight: 800;
-  line-height: 1.12;
-  margin: 0.5rem 0 1.2rem;
+  line-height: 1.08;
+  margin: 0.65rem 0 1.35rem;
   letter-spacing: -0.02em;
 }
 
 .story-hook__sub {
-  font-size: 1rem;
+  font-size: clamp(1.1rem, 1.7vw, 2rem);
   color: var(--muted);
-  line-height: 1.65;
-  max-width: 46rem;
-  margin: 0 auto 2rem;
+  line-height: 1.5;
+  max-width: 74rem;
+  margin: 0 auto 2.4rem;
 }
 
 .story-hook__cta {
-  font-size: 0.82rem;
+  font-size: clamp(0.95rem, 1.25vw, 1.45rem);
   font-weight: 700;
   color: var(--accent);
   letter-spacing: 0.04em;
@@ -3345,6 +3347,14 @@ main {
 @media (max-width: 520px) {
   .site-header h1 {
     font-size: clamp(2rem, 12vw, 3rem);
+  }
+
+  .story-hook__headline {
+    font-size: clamp(2.25rem, 12vw, 3.6rem);
+  }
+
+  .story-hook__sub {
+    font-size: 1rem;
   }
 
   .listening-guide__intro {
