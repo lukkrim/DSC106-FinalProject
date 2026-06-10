@@ -793,56 +793,19 @@ main {
   line-height: 1.45;
 }
 
-.explorer-random-player {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.75rem;
-  align-items: center;
+.explorer-feature-desc {
   margin-top: 0.85rem;
-  padding-top: 0.85rem;
+  padding: 0.85rem 1rem;
   border-top: 1px solid var(--ring);
+  background: rgba(58, 47, 40, 0.04);
+  border-radius: 10px;
 }
 
-.explorer-random-player__title {
-  margin: 0;
+.explorer-feature-desc__text {
+  margin: 0.3rem 0 0;
   color: var(--text);
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.btn-shuffle {
-  padding: 0.48rem 0.8rem;
-  color: #fffaf6;
-  background: var(--accent);
-  border: 0;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 700;
-  white-space: nowrap;
-  transition: background 0.15s ease, transform 0.15s ease;
-}
-
-.btn-shuffle:hover {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
-}
-
-.explorer-random-player__embed {
-  grid-column: 1 / -1;
-  min-height: 80px;
-  overflow: hidden;
-  background: rgba(58, 47, 40, 0.05);
-  border: 1px solid var(--ring);
-  border-radius: 12px;
-}
-
-.explorer-random-player__embed iframe {
-  display: block;
-  width: 100%;
-  height: 80px;
-  border: 0;
-  border-radius: 12px;
+  font-size: 0.88rem;
+  line-height: 1.55;
 }
 
 .genre-profile {
@@ -946,13 +909,6 @@ main {
     padding: 1rem;
   }
 
-  .explorer-random-player {
-    grid-template-columns: 1fr;
-  }
-
-  .btn-shuffle {
-    width: 100%;
-  }
 }
 
 /* --- Popularity explorer --- */
@@ -1232,6 +1188,92 @@ main {
 
 .journey-story[hidden] {
   display: none !important;
+}
+
+/* journey placeholder */
+
+.journey-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 260px;
+  padding: 2rem 1.5rem;
+  border: 1.5px dashed var(--ring);
+  border-radius: 10px;
+  background: rgba(243, 228, 212, 0.18);
+}
+
+.journey-placeholder[hidden] {
+  display: none !important;
+}
+
+.journey-placeholder__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  max-width: 28rem;
+  text-align: center;
+}
+
+.journey-placeholder__icon {
+  font-size: 2.2rem;
+  opacity: 0.35;
+  line-height: 1;
+}
+
+.journey-placeholder__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0;
+}
+
+.journey-placeholder__desc {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.journey-placeholder__hints {
+  display: flex;
+  flex-direction: column;
+  gap: 0.42rem;
+  width: 100%;
+  max-width: 18rem;
+  margin-top: 0.35rem;
+}
+
+.journey-placeholder__hint {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.journey-placeholder__hint-bar {
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--accent);
+  opacity: 0.3;
+  flex-shrink: 0;
+}
+
+.journey-placeholder__hint-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.journey-placeholder__years {
+  margin: 0.1rem 0 0;
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  opacity: 0.65;
 }
 
 /* pick panel */
@@ -2150,9 +2192,7 @@ main {
 }
 
 .spotify-embed,
-.spotify-embed iframe,
-.explorer-random-player__embed,
-.explorer-random-player__embed iframe {
+.spotify-embed iframe {
   border-radius: 8px;
 }
 
@@ -2619,7 +2659,7 @@ main {
 }
 
 .story-scroll .explorer-help,
-.story-scroll .explorer-random-player,
+.story-scroll .explorer-feature-desc,
 .story-scroll .journey-legend,
 .story-scroll .journey-progress {
   flex-shrink: 0;
@@ -2631,7 +2671,7 @@ main {
   font-size: 0.8rem;
 }
 
-.story-scroll .explorer-random-player {
+.story-scroll .explorer-feature-desc {
   margin-top: 0.45rem;
   padding-top: 0.45rem;
 }
@@ -2648,7 +2688,8 @@ main {
 }
 
 .story-scroll .artist-journey:not(.is-journey-chart-open) .artist-journey__body {
-  flex: 0 0 auto;
+  flex: 1;
+  min-height: 0;
   gap: 0.35rem;
 }
 
@@ -2660,6 +2701,7 @@ main {
 .story-scroll .artist-journey:not(.is-journey-chart-open) .journey-pick-panel {
   padding-bottom: 0.15rem;
 }
+
 
 .story-scroll .journey-pick-panel {
   flex: 0 0 auto;

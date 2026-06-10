@@ -224,19 +224,9 @@
             Use the feature tabs to re-rank genres by average audio traits. Hover a bar
             for the exact value, or click a genre to update the profile card.
           </p>
-          <div class="explorer-random-player">
-            <div>
-              <p class="label">Random dataset track</p>
-              <p class="explorer-random-player__title" id="random-track-title"></p>
-            </div>
-            <button type="button" class="btn-shuffle" id="btn-random-track">
-              Shuffle song
-            </button>
-            <div
-              class="explorer-random-player__embed"
-              id="random-track-embed"
-              aria-label="Random Spotify track from the dataset"
-            ></div>
+          <div class="explorer-feature-desc" id="explorer-feature-desc" aria-live="polite">
+            <p class="label" id="explorer-feature-desc-label"></p>
+            <p class="explorer-feature-desc__text" id="explorer-feature-desc-text"></p>
           </div>
         </div>
 
@@ -376,6 +366,33 @@
               hidden
             ></ul>
           </div>
+        </div>
+      </div>
+
+      <div class="journey-placeholder" id="journey-placeholder" aria-hidden="true">
+        <div class="journey-placeholder__inner">
+          <span class="journey-placeholder__icon">♫</span>
+          <h3 class="journey-placeholder__title">See how their sound evolved</h3>
+          <p class="journey-placeholder__desc">Pick an artist above and click <strong>Start their story</strong> to step through their career year by year — watching danceability, energy, mood, and more shift over time.</p>
+          <div class="journey-placeholder__hints">
+            <div class="journey-placeholder__hint">
+              <span class="journey-placeholder__hint-bar" style="width:62%"></span>
+              <span class="journey-placeholder__hint-label">Danceability</span>
+            </div>
+            <div class="journey-placeholder__hint">
+              <span class="journey-placeholder__hint-bar" style="width:81%"></span>
+              <span class="journey-placeholder__hint-label">Energy</span>
+            </div>
+            <div class="journey-placeholder__hint">
+              <span class="journey-placeholder__hint-bar" style="width:44%"></span>
+              <span class="journey-placeholder__hint-label">Mood</span>
+            </div>
+            <div class="journey-placeholder__hint">
+              <span class="journey-placeholder__hint-bar" style="width:28%"></span>
+              <span class="journey-placeholder__hint-label">Acousticness</span>
+            </div>
+          </div>
+          <p class="journey-placeholder__years">2000 · · · · · · · · · · · 2020</p>
         </div>
       </div>
 

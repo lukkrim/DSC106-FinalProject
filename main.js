@@ -47,13 +47,13 @@ const GENRE_COLORS = {
 };
 
 const EXPLORER_FEATURES = [
-  { key: 'danceability', label: 'Danceability' },
-  { key: 'energy', label: 'Energy' },
-  { key: 'valence', label: 'Mood' },
-  { key: 'acousticness', label: 'Acousticness' },
-  { key: 'speechiness', label: 'Speechiness' },
-  { key: 'instrumentalness', label: 'Instrumentalness' },
-  { key: 'tempo', label: 'Tempo', format: (value) => `${Math.round(value)} BPM` },
+  { key: 'danceability', label: 'Danceability', description: 'How suitable a track is for dancing. Spotify combines tempo, rhythm stability, beat strength, and regularity into a single 0–1 score. A score near 1.0 means the track has a strong, steady groove; near 0.0 means it\'s erratic or slow-moving.' },
+  { key: 'energy', label: 'Energy', description: 'A perceptual measure of intensity and activity, scored 0–1. High-energy tracks feel fast, loud, and noisy — think heavy metal or EDM drops. Low-energy tracks are slower, quieter, and more laid-back. It\'s calculated from dynamic range, loudness, and onset rate.' },
+  { key: 'valence', label: 'Mood', description: 'Musical positiveness on a 0–1 scale. Tracks with high valence sound happy, cheerful, or euphoric. Tracks with low valence sound sad, depressed, or angry. The same tempo or energy can carry very different emotional weight — valence captures that.' },
+  { key: 'acousticness', label: 'Acousticness', description: 'Confidence that the track is acoustic (no electric amplification or synthesis), scored 0–1. A score near 1.0 means Spotify is highly confident the song uses acoustic instruments. Studio-produced or heavily synthesized songs score close to 0.' },
+  { key: 'speechiness', label: 'Speechiness', description: 'Detects the presence of spoken words, scored 0–1. Values above 0.66 describe tracks made almost entirely of speech (podcasts, spoken word). Between 0.33 and 0.66 indicates music that also contains speech, like rap. Below 0.33 represents mostly instrumental or sung tracks.' },
+  { key: 'instrumentalness', label: 'Instrumentalness', description: 'Predicts whether a track has no vocals, scored 0–1. "Ooh" and "aah" sounds are treated as instrumental. Values above 0.5 suggest an instrumental track; closer to 1.0 signals stronger confidence. Most pop, rap, and R&B songs score very close to 0.' },
+  { key: 'tempo', label: 'Tempo', format: (value) => `${Math.round(value)} BPM`, description: 'The overall estimated speed of the track in beats per minute (BPM). Tempo is derived by averaging the duration of detected beats throughout the song. Higher BPM generally feels more energetic and dance-floor ready; lower BPM tends toward ballads or slow jams.' },
 ];
 
 const JOURNEY_ARTISTS = [
@@ -632,6 +632,8 @@ function initGenreExplorer(pool) {
   const tabs = document.getElementById('explorer-feature-tabs');
   const svgEl = document.getElementById('explorer-chart');
   const tooltip = document.getElementById('explorer-tooltip');
+  const featDescLabel = document.getElementById('explorer-feature-desc-label');
+  const featDescText = document.getElementById('explorer-feature-desc-text');
   if (!tabs || !svgEl || !stats.length) return;
 
   const state = {
@@ -762,6 +764,10 @@ function initGenreExplorer(pool) {
       .attr('x', innerWidth + 10)
       .attr('y', y.bandwidth() / 2)
       .text((item) => formatExploreValue(state.feature, item.means[state.feature]));
+
+    const activeFeatureDef = EXPLORER_FEATURES.find((f) => f.key === state.feature);
+    if (featDescLabel) featDescLabel.textContent = activeFeatureDef?.label ?? '';
+    if (featDescText) featDescText.textContent = activeFeatureDef?.description ?? '';
 
     renderGenreExplorerProfile(stats, state.selectedGenre);
   }
@@ -1774,6 +1780,7 @@ function setArtistJourneyChartOpen(open) {
 function initArtistJourney(pool) {
   const pickPanel = document.getElementById('journey-pick-panel');
   const storyPanel = document.getElementById('journey-story');
+  const placeholderEl = document.getElementById('journey-placeholder');
   const pickerEl = document.getElementById('artist-picker');
   const startBtn = document.getElementById('btn-journey-start');
   const svgEl = document.getElementById('journey-chart');
@@ -2025,6 +2032,7 @@ function initArtistJourney(pool) {
     clearSearch();
     pickPanel.classList.remove('is-compact');
     storyPanel.hidden = true;
+    if (placeholderEl) placeholderEl.hidden = false;
     setArtistJourneyChartOpen(false);
     journeySection?.classList.remove('is-journey-active');
     if (progressEl) progressEl.hidden = true;
@@ -2043,6 +2051,7 @@ function initArtistJourney(pool) {
     pickerEl.querySelectorAll('.artist-pick-btn').forEach((b) => { b.disabled = true; });
     pickPanel.classList.add('is-compact');
     storyPanel.hidden = false;
+    if (placeholderEl) placeholderEl.hidden = true;
     setArtistJourneyChartOpen(true);
     journeySection?.classList.add('is-journey-active');
     if (progressEl) progressEl.hidden = false;
@@ -2303,6 +2312,8 @@ function initTimeline(pool) {
     return `rgb(${Math.round(from[0] + (to[0] - from[0]) * t)},${Math.round(from[1] + (to[1] - from[1]) * t)},${Math.round(from[2] + (to[2] - from[2]) * t)})`;
   }
 
+  const NUM_BINS = 5;
+
   function render() {
     const vals = years.map((year) => yearGenreData[year]?.[activeGenre]?.[activeFeature] ?? null);
     const valid = vals.filter((v) => v !== null);
@@ -2314,6 +2325,10 @@ function initTimeline(pool) {
     const fromRgb = [246, 237, 226];
     const toRgb = hexToRgb(accentHex);
 
+    const binColors = Array.from({ length: NUM_BINS }, (_, i) =>
+      lerpColor(fromRgb, toRgb, i / (NUM_BINS - 1)),
+    );
+
     squares.forEach(({ el }, i) => {
       const val = vals[i];
       if (val === null) {
@@ -2321,14 +2336,19 @@ function initTimeline(pool) {
         el.classList.add('is-empty');
       } else {
         const t = (val - minV) / spread;
-        el.style.background = lerpColor(fromRgb, toRgb, t);
+        const binIndex = Math.min(Math.floor(t * NUM_BINS), NUM_BINS - 1);
+        el.style.background = binColors[binIndex];
         el.classList.remove('is-empty');
       }
     });
 
     if (legendBarEl) {
-      legendBarEl.style.background =
-        `linear-gradient(to right, ${lerpColor(fromRgb, toRgb, 0)}, ${lerpColor(fromRgb, toRgb, 1)})`;
+      const stops = binColors.map((c, i) => {
+        const pct = (i / (NUM_BINS - 1)) * 100;
+        const next = ((i + 1) / (NUM_BINS - 1)) * 100;
+        return `${c} ${pct}%, ${c} ${Math.min(next, 100)}%`;
+      });
+      legendBarEl.style.background = `linear-gradient(to right, ${stops.join(', ')})`;
     }
   }
 
@@ -2768,7 +2788,6 @@ async function init() {
   wireGenreButtons(() => tracks, state);
   wireSpotifyPlayButton();
   initGenreExplorer(pool);
-  initRandomTrackPlayer(pool);
   initPerformanceExplorer(pool);
   initArtistJourney(pool);
   initTransitions(pool);
