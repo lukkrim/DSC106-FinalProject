@@ -2823,7 +2823,6 @@ main {
 .story-stage > .story-quotes {
   justify-content: flex-start;
   align-items: stretch;
-  min-height: 100dvh;
   padding: 4rem 3rem;
   gap: 0;
 }
@@ -2838,7 +2837,6 @@ main {
   display: flex;
   flex-direction: column;
   gap: 2.5rem;
-  flex: 1;
 }
 
 .scroll-quote {
